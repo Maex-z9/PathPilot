@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch PathPilot.Desktop",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/PathPilot.Desktop/bin/Debug/net10.0/PathPilot.Desktop.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/PathPilot.Desktop",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    }
+  ]
+}
