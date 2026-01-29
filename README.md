@@ -18,7 +18,6 @@ Ein Desktop-Overlay-Tool für Path of Exile, das Spielern hilft, ihre Charaktere
 
 ## Build & Run
 
-```bash
 # Projekt bauen
 dotnet build
 
@@ -27,3 +26,8 @@ dotnet test
 
 # App starten
 dotnet run --project src/PathPilot.Desktop
+
+
+## Entwicklung
+
+Entwickelt mit VS Code auf Linux. Funktioniert auf Windows, Linux und macOS.
