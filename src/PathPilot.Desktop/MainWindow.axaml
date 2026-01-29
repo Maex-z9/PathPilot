@@ -2,8 +2,189 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:models="clr-namespace:PathPilot.Core.Models;assembly=PathPilot.Core"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="PathPilot.Desktop.MainWindow"
-        Title="PathPilot.Desktop">
-    Welcome to Avalonia!
+        Title="PathPilot - Path of Exile Build Guide"
+        Width="1200" Height="800"
+        Background="#1a1a1a">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2a2a2a" BorderBrush="#3a3a3a" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="20">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                    <TextBlock Text="📈" FontSize="24"/>
+                    <StackPanel>
+                        <TextBlock Text="PathPilot" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Name="BuildNameText" Text="No build loaded" FontSize="12" Foreground="#888888"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Button Grid.Column="2" 
+                        Name="ImportButton"
+                        Content="Import Build"
+                        Padding="15,10"
+                        Background="#0066cc"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Click="ImportButton_Click"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" ColumnDefinitions="*">
+            <!-- Loadout Selector (shown when build is loaded) -->
+            <Border Name="LoadoutSelector" IsVisible="False" Background="#252525" 
+                    Height="60" VerticalAlignment="Top" Margin="30,20,30,0"
+                    CornerRadius="8" Padding="20" ZIndex="10">
+                <Grid ColumnDefinitions="Auto,250,Auto,250">
+                    <TextBlock Grid.Column="0" Text="Skill Set:" VerticalAlignment="Center" 
+                               Foreground="#888" Margin="0,0,10,0" FontSize="14"/>
+                    <ComboBox Grid.Column="1" Name="SkillSetComboBox" 
+                              VerticalAlignment="Center"
+                              SelectionChanged="SkillSetComboBox_SelectionChanged"
+                              Background="#1a1a1a"
+                              Foreground="White"/>
+                    
+                    <TextBlock Grid.Column="2" Text="Item Set:" VerticalAlignment="Center" 
+                               Foreground="#888" Margin="30,0,10,0" FontSize="14"/>
+                    <ComboBox Grid.Column="3" Name="ItemSetComboBox" 
+                              VerticalAlignment="Center"
+                              SelectionChanged="ItemSetComboBox_SelectionChanged"
+                              Background="#1a1a1a"
+                              Foreground="White"/>
+                </Grid>
+            </Border>
+            
+            <!-- Build Info Display (shown after import) -->
+            <ScrollViewer Name="BuildDisplay" IsVisible="False" Margin="0,100,0,0">
+                <StackPanel Margin="30" Spacing="20">
+                    <!-- Build Header -->
+                    <Border Background="#252525" CornerRadius="8" Margin="0,0,0,10">
+                        <StackPanel Spacing="15" Margin="25">
+                            <TextBlock Name="BuildTitleText" Text="Build Name" FontSize="28" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Name="BuildSubtitleText" Text="Class - Ascendancy" FontSize="16" Foreground="#aaa"/>
+                            
+                            <Grid ColumnDefinitions="*,*,*" Margin="0,15,0,0">
+                                <Border Grid.Column="0" Background="#1a1a1a" CornerRadius="5" Margin="0,0,10,0">
+                                    <StackPanel Margin="15">
+                                        <TextBlock Text="LEVEL" FontSize="11" Foreground="#888"/>
+                                        <TextBlock Name="LevelText" Text="85" FontSize="24" FontWeight="Bold" Foreground="#4a9eff"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Background="#1a1a1a" CornerRadius="5" Margin="5,0">
+                                    <StackPanel Margin="15">
+                                        <TextBlock Text="PASSIVE POINTS" FontSize="11" Foreground="#888"/>
+                                        <TextBlock Name="PassivePointsText" Text="123" FontSize="24" FontWeight="Bold" Foreground="#4a9eff"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="2" Background="#1a1a1a" CornerRadius="5" Margin="10,0,0,0">
+                                    <StackPanel Margin="15">
+                                        <TextBlock Text="ASCENDANCY" FontSize="11" Foreground="#888"/>
+                                        <TextBlock Name="AscendancyPointsText" Text="8" FontSize="24" FontWeight="Bold" Foreground="#ff9d4a"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Gems Section -->
+                    <Border Background="#252525" CornerRadius="8">
+                        <StackPanel Spacing="15" Margin="25">
+                            <TextBlock Text="💎 Skill Gems" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            <ItemsControl Name="GemsListBox">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="models:Gem">
+                                        <Border Background="#1a1a1a" CornerRadius="5" Margin="0,0,0,10">
+                                            <StackPanel Spacing="8" Margin="15">
+                                                <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="White">
+                                                    <Run Text="{Binding Name}"/>
+                                                </TextBlock>
+                                                <StackPanel Orientation="Horizontal" Spacing="15">
+                                                    <TextBlock FontSize="13" Foreground="#4a9eff">
+                                                        <Run Text="Level "/>
+                                                        <Run Text="{Binding Level}"/>
+                                                    </TextBlock>
+                                                    <TextBlock FontSize="13" Foreground="#4aff9d">
+                                                        <Run Text="Quality "/>
+                                                        <Run Text="{Binding Quality}"/>
+                                                        <Run Text="%"/>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding Type}" FontSize="13" Foreground="#888"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Items Section -->
+                    <Border Background="#252525" CornerRadius="8">
+                        <StackPanel Spacing="15" Margin="25">
+                            <TextBlock Text="🎒 Gear" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            <ItemsControl Name="ItemsListBox">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="models:Item">
+                                        <Border Background="#1a1a1a" CornerRadius="5" Margin="0,0,0,10">
+                                            <StackPanel Spacing="8" Margin="15">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock Grid.Column="0" FontSize="16" FontWeight="SemiBold" Foreground="White">
+                                                        <Run Text="{Binding Name}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Slot}" FontSize="13" Foreground="#888"/>
+                                                </Grid>
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <TextBlock FontSize="13" Foreground="#ff4a9d">
+                                                        <Run Text="{Binding RequiredLinks}"/>
+                                                        <Run Text="-Link"/>
+                                                    </TextBlock>
+                                                    <TextBlock FontSize="13" Foreground="#4aff9d">
+                                                        <Run Text="{Binding RequiredSockets.Count}"/>
+                                                        <Run Text=" Sockets"/>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding Rarity}" FontSize="13" Foreground="#ffaa4a"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Skill Tree Info -->
+                    <Border Background="#252525" CornerRadius="8">
+                        <StackPanel Spacing="15" Margin="25">
+                            <TextBlock Text="🌳 Skill Tree" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Name="SkillTreeInfoText" Text="No skill tree data" FontSize="14" Foreground="#aaa" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Welcome Screen (shown initially) -->
+            <Border Name="WelcomeScreen" Background="#1a1a1a">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20" MaxWidth="500">
+                    <TextBlock Text="📈" FontSize="64" HorizontalAlignment="Center"/>
+                    <TextBlock Text="PathPilot" FontSize="32" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Import a Path of Building build to get started" 
+                               FontSize="16" 
+                               Foreground="#888" 
+                               HorizontalAlignment="Center"
+                               TextAlignment="Center"/>
+                    <Button Content="Import Build" 
+                            Padding="20,12"
+                            Background="#0066cc"
+                            Foreground="White"
+                            FontSize="16"
+                            FontWeight="Bold"
+                            HorizontalAlignment="Center"
+                            Click="ImportButton_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
 </Window>
