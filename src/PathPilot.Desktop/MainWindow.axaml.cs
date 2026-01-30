@@ -4,16 +4,19 @@ using PathPilot.Core.Models;
 using PathPilot.Core.Parsers;
 using System;
 using System.Linq;
+using PathPilot.Core.Services;
 
 namespace PathPilot.Desktop;
 
 public partial class MainWindow : Window
 {
     private Build? _currentBuild;
+    private readonly GemDataService _gemDataService = new();
 
     public MainWindow()
     {
         InitializeComponent();
+        _gemDataService = new GemDataService();
         
         // Set default text
         if (BuildNameText != null)
@@ -111,22 +114,51 @@ public partial class MainWindow : Window
         }
     }
 
-    private void UpdateDisplayedLoadout()
-    {
-        if (_currentBuild == null) return;
+private void UpdateDisplayedLoadout()
+{
+    if (_currentBuild == null) return;
 
-        // Display gems from active skill set
-        GemsListBox.ItemsSource = _currentBuild.Gems
-            .Where(g => g.IsEnabled)
-            .OrderBy(g => g.LinkGroup)
-            .ThenBy(g => g.Type == GemType.Support ? 1 : 0)
-            .ToList();
+    // Enrich gems with acquisition info AND color
+    var enrichedGems = _currentBuild.Gems
+        .Where(g => g.IsEnabled)
+        .Select(g =>
+        {
+            var gemInfo = _gemDataService.GetGemInfo(g.Name);
+            if (gemInfo != null)
+            {
+                var source = gemInfo.Sources.OrderBy(s => s.Act).FirstOrDefault();
+                if (source != null)
+                {
+                    g.AcquisitionInfo = $"Act {source.Act}: {source.VendorName ?? source.QuestName ?? "Available"}";
+                }
+                
+                // Set color from database
+                g.Color = gemInfo.Color switch
+                {
+                    "Red" => SocketColor.Red,
+                    "Green" => SocketColor.Green,
+                    "Blue" => SocketColor.Blue,
+                    _ => SocketColor.White
+                };
+            }
+            else
+            {
+                g.AcquisitionInfo = "Unknown source";
+                g.Color = SocketColor.White;
+            }
+            return g;
+        })
+        .OrderBy(g => g.LinkGroup)
+        .ThenBy(g => g.Type == GemType.Support ? 1 : 0)
+        .ToList();
 
-        // Display items from active item set
-        ItemsListBox.ItemsSource = _currentBuild.Items
-            .OrderBy(i => i.Slot)
-            .ToList();
-    }
+    GemsListBox.ItemsSource = enrichedGems;
+
+    // Display items from active item set
+    ItemsListBox.ItemsSource = _currentBuild.Items
+        .OrderBy(i => i.Slot)
+        .ToList();
+}
 
     private void SkillSetComboBox_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {

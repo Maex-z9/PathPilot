@@ -90,36 +90,77 @@
                     </Border>
 
                     <!-- Gems Section -->
-                    <Border Background="#252525" CornerRadius="8">
-                        <StackPanel Spacing="15" Margin="25">
-                            <TextBlock Text="💎 Skill Gems" FontSize="20" FontWeight="Bold" Foreground="White"/>
-                            <ItemsControl Name="GemsListBox">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="models:Gem">
-                                        <Border Background="#1a1a1a" CornerRadius="5" Margin="0,0,0,10">
-                                            <StackPanel Spacing="8" Margin="15">
-                                                <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="White">
-                                                    <Run Text="{Binding Name}"/>
-                                                </TextBlock>
-                                                <StackPanel Orientation="Horizontal" Spacing="15">
-                                                    <TextBlock FontSize="13" Foreground="#4a9eff">
-                                                        <Run Text="Level "/>
-                                                        <Run Text="{Binding Level}"/>
-                                                    </TextBlock>
-                                                    <TextBlock FontSize="13" Foreground="#4aff9d">
-                                                        <Run Text="Quality "/>
-                                                        <Run Text="{Binding Quality}"/>
-                                                        <Run Text="%"/>
-                                                    </TextBlock>
-                                                    <TextBlock Text="{Binding Type}" FontSize="13" Foreground="#888"/>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                    <!-- Gems Section -->
+<Border Background="#252525" CornerRadius="8">
+    <StackPanel Spacing="15" Margin="25">
+        <TextBlock Text="💎 Skill Gems" FontSize="20" FontWeight="Bold" Foreground="White"/>
+        <ItemsControl Name="GemsListBox">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="models:Gem">
+                    <Border Background="#1a1a1a" CornerRadius="5" Margin="0,0,0,10">
+                        <StackPanel Spacing="8" Margin="15">
+                            <!-- Gem Name with Color Indicator -->
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Border Grid.Column="0" 
+                                        Width="12" Height="12" 
+                                        CornerRadius="6"
+                                        Margin="0,0,10,0"
+                                        VerticalAlignment="Center">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="{Binding Color, Converter={StaticResource GemColorConverter}}" />
+                                    </Border.Background>
+                                </Border>
+                                <TextBlock Grid.Column="1" 
+                                           FontSize="16" 
+                                           FontWeight="SemiBold" 
+                                           Foreground="White"
+                                           VerticalAlignment="Center">
+                                    <Run Text="{Binding Name}"/>
+                                </TextBlock>
+                            </Grid>
+                            
+                            <!-- Stats and Link Group -->
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                                    <TextBlock FontSize="13" Foreground="#4a9eff">
+                                        <Run Text="Level "/>
+                                        <Run Text="{Binding Level}"/>
+                                    </TextBlock>
+                                    <TextBlock FontSize="13" Foreground="#4aff9d">
+                                        <Run Text="Quality "/>
+                                        <Run Text="{Binding Quality}"/>
+                                        <Run Text="%"/>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding Type}" FontSize="13" Foreground="#888"/>
+                                </StackPanel>
+                                
+                                <!-- Link Group Badge -->
+                                <Border Grid.Column="1" 
+                                        Background="#2a2a2a" 
+                                        CornerRadius="4" 
+                                        Padding="8,4"
+                                        IsVisible="{Binding LinkGroup, Converter={StaticResource StringNotEmptyConverter}}">
+                                    <TextBlock FontSize="11" 
+                                               Foreground="#aaa"
+                                               FontWeight="SemiBold">
+                                        <Run Text="🔗 "/>
+                                        <Run Text="{Binding LinkGroup}"/>
+                                    </TextBlock>
+                                </Border>
+                            </Grid>
+                            
+                            <!-- Acquisition Info -->
+                            <TextBlock FontSize="12" Foreground="#ff9d4a" Margin="0,5,0,0">
+                                <Run Text="📍 "/>
+                                <Run Text="{Binding AcquisitionInfo}"/>
+                            </TextBlock>
                         </StackPanel>
                     </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</Border>
 
                     <!-- Items Section -->
                     <Border Background="#252525" CornerRadius="8">
