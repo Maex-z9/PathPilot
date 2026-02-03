@@ -1,0 +1,143 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:PathPilot.Core.Models;assembly=PathPilot.Core"
+        x:Class="PathPilot.Desktop.OverlayWindow"
+        Title="PathPilot Overlay"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        SystemDecorations="None"
+        ShowInTaskbar="False"
+        Topmost="True"
+        SizeToContent="Height"
+        Width="320"
+        MinHeight="200"
+        MaxHeight="800"
+        CanResize="False">
+
+    <Border Background="#CC1E1E1E"
+            CornerRadius="8"
+            Padding="15">
+        <Grid RowDefinitions="Auto,*,Auto">
+            <!-- Header - Draggable -->
+            <Border Name="DragHandle"
+                    Grid.Row="0"
+                    Background="#33ffffff"
+                    CornerRadius="4"
+                    Padding="10,8"
+                    Margin="0,0,0,10"
+                    Cursor="Hand">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Name="BuildNameText"
+                                   Text="No Build Loaded"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   Foreground="White"/>
+                        <TextBlock Name="CharacterInfoText"
+                                   Text=""
+                                   FontSize="11"
+                                   Foreground="#aaa"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="1"
+                               Text="⋮⋮"
+                               FontSize="16"
+                               Foreground="#666"
+                               VerticalAlignment="Center"
+                               ToolTip.Tip="Drag to move"/>
+                </Grid>
+            </Border>
+
+            <!-- Gems List -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          MaxHeight="500">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="GEMS"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="#666"
+                               Margin="0,0,0,5"/>
+
+                    <ItemsControl Name="GemsListBox">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="models:GemLinkGroup">
+                                <Border Background="#33333333"
+                                        CornerRadius="5"
+                                        Padding="10"
+                                        Margin="0,0,0,8">
+                                    <StackPanel Spacing="4">
+                                        <!-- Link Group Header with Main Skill -->
+                                        <TextBlock FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#4aff9d"
+                                                   Margin="0,0,0,4">
+                                            <Run Text="{Binding Key}"/>
+                                        </TextBlock>
+
+                                        <!-- Gems in this group -->
+                                        <ItemsControl ItemsSource="{Binding Value}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="models:Gem">
+                                                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
+                                                        <!-- Color Dot -->
+                                                        <Border Grid.Column="0"
+                                                                Width="8" Height="8"
+                                                                CornerRadius="4"
+                                                                Margin="0,0,8,0"
+                                                                VerticalAlignment="Center">
+                                                            <Border.Background>
+                                                                <SolidColorBrush Color="{Binding Color, Converter={StaticResource GemColorConverter}}"/>
+                                                            </Border.Background>
+                                                        </Border>
+
+                                                        <!-- Gem Name -->
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding Name}"
+                                                                   FontSize="11"
+                                                                   Foreground="{Binding IsSupport, Converter={StaticResource OverlaySupportColorConverter}}"
+                                                                   VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis"/>
+
+                                                        <!-- Level/Quality -->
+                                                        <TextBlock Grid.Column="2"
+                                                                   FontSize="10"
+                                                                   Foreground="#888"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="5,0,0,0">
+                                                            <Run Text="{Binding Level}"/>/<Run Text="{Binding Quality}"/>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Footer - Hotkey Info -->
+            <Border Grid.Row="2"
+                    Background="#22ffffff"
+                    CornerRadius="4"
+                    Padding="8,5"
+                    Margin="0,10,0,0">
+                <StackPanel>
+                    <TextBlock Name="HotkeyInfoText"
+                               Text="F11: Toggle | Ctrl+F11: Interact"
+                               FontSize="10"
+                               Foreground="#888"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Name="ModeText"
+                               Text="Click-Through"
+                               FontSize="10"
+                               Foreground="#4aff9d"
+                               HorizontalAlignment="Center"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

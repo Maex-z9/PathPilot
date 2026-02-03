@@ -1,8 +1,11 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using PathPilot.Core.Models;
 using PathPilot.Core.Parsers;
 using PathPilot.Core.Services;
+using PathPilot.Desktop.Services;
+using PathPilot.Desktop.Settings;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -14,14 +17,61 @@ public partial class MainWindow : Window
 {
     private Build? _currentBuild;
     private readonly GemDataService _gemDataService;
+    private readonly OverlaySettings _overlaySettings;
+    private readonly HotkeyService _hotkeyService;
+    private readonly OverlayService _overlayService;
 
     public MainWindow()
     {
         InitializeComponent();
-        
+
         // Initialize gem data service
         _gemDataService = new GemDataService();
         _gemDataService.LoadDatabase();
+
+        // Initialize overlay services
+        _overlaySettings = OverlaySettings.Load();
+        _hotkeyService = new HotkeyService(_overlaySettings);
+        _overlayService = new OverlayService(_overlaySettings, _hotkeyService);
+
+        // Register hotkeys when window opens
+        Opened += OnMainWindowOpened;
+        Closed += OnMainWindowClosed;
+
+        // Add keyboard handler for local hotkeys (fallback for non-Windows)
+        KeyDown += OnKeyDown;
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        // Toggle overlay visibility (uses configured hotkey)
+        if (e.Key == _overlaySettings.ToggleKey && e.KeyModifiers == _overlaySettings.ToggleModifiers)
+        {
+            _overlayService.ToggleVisibility();
+            e.Handled = true;
+        }
+        // Toggle interactive mode (uses configured hotkey)
+        else if (e.Key == _overlaySettings.InteractiveKey && e.KeyModifiers == _overlaySettings.InteractiveModifiers)
+        {
+            _overlayService.ToggleInteractive();
+            e.Handled = true;
+        }
+    }
+
+    private void OnMainWindowOpened(object? sender, EventArgs e)
+    {
+        // Start global hotkey listener
+        _hotkeyService.Start();
+
+        // Update overlay button tooltip with configured hotkey
+        OverlayButton.SetValue(ToolTip.TipProperty,
+            $"Show overlay ({FormatHotkey(_overlaySettings.ToggleModifiers, _overlaySettings.ToggleKey)} to toggle)");
+    }
+
+    private void OnMainWindowClosed(object? sender, EventArgs e)
+    {
+        _hotkeyService.Dispose();
+        _overlayService.Dispose();
     }
 
     private async void ImportButton_Click(object? sender, RoutedEventArgs e)
@@ -93,6 +143,9 @@ public partial class MainWindow : Window
                         UpdateDisplayedLoadout();
                         BuildTitleText.Text = _currentBuild.CharacterDescription;
                         SaveButton.IsEnabled = true;
+
+                        // Update overlay with new build
+                        _overlayService.UpdateBuild(_currentBuild);
                     }
 
                     dialog.Close();
@@ -155,6 +208,9 @@ public partial class MainWindow : Window
         {
             _currentBuild.SetActiveLoadout(selectedLoadout);
             UpdateDisplayedLoadout();
+
+            // Update overlay when loadout changes
+            _overlayService.UpdateBuild(_currentBuild);
         }
     }
 
@@ -368,6 +424,9 @@ public partial class MainWindow : Window
                     BuildTitleText.Text = _currentBuild.CharacterDescription;
                     SaveButton.IsEnabled = true;
                     Console.WriteLine($"Build loaded: {_currentBuild.Name}");
+
+                    // Update overlay with loaded build
+                    _overlayService.UpdateBuild(_currentBuild);
                 }
                 dialog.Close();
             }
@@ -396,5 +455,36 @@ public partial class MainWindow : Window
 
         dialog.Content = panel;
         await dialog.ShowDialog(this);
+    }
+
+    private void OverlayButton_Click(object? sender, RoutedEventArgs e)
+    {
+        _overlayService.ShowOverlay(_currentBuild);
+    }
+
+    private async void SettingsButton_Click(object? sender, RoutedEventArgs e)
+    {
+        // Temporarily stop hotkey listener while settings dialog is open
+        _hotkeyService.Stop();
+
+        var settingsWindow = new SettingsWindow(_overlaySettings);
+        await settingsWindow.ShowDialog(this);
+
+        // Restart hotkey listener with potentially new settings
+        _hotkeyService.Restart();
+
+        // Update overlay button tooltip with new hotkey
+        OverlayButton.SetValue(ToolTip.TipProperty,
+            $"Show overlay ({FormatHotkey(_overlaySettings.ToggleModifiers, _overlaySettings.ToggleKey)} to toggle)");
+    }
+
+    private static string FormatHotkey(Avalonia.Input.KeyModifiers modifiers, Avalonia.Input.Key key)
+    {
+        var parts = new System.Collections.Generic.List<string>();
+        if (modifiers.HasFlag(Avalonia.Input.KeyModifiers.Control)) parts.Add("Ctrl");
+        if (modifiers.HasFlag(Avalonia.Input.KeyModifiers.Alt)) parts.Add("Alt");
+        if (modifiers.HasFlag(Avalonia.Input.KeyModifiers.Shift)) parts.Add("Shift");
+        parts.Add(key.ToString());
+        return string.Join("+", parts);
     }
 }

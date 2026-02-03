@@ -5,11 +5,12 @@
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
-    
+
     <Application.Resources>
         <converters:GemColorConverter x:Key="GemColorConverter"/>
         <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
         <converters:SupportFontWeightConverter x:Key="SupportFontWeightConverter"/>
         <converters:RarityColorConverter x:Key="RarityColorConverter"/>
+        <converters:OverlaySupportColorConverter x:Key="OverlaySupportColorConverter"/>
     </Application.Resources>
 </Application>

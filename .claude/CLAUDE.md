@@ -15,7 +15,12 @@ PathPilot/
 │   └── PathPilot.Desktop/       # Avalonia desktop app
 │       ├── MainWindow.axaml     # Main UI (gems, items, loadout selector)
 │       ├── TreeViewerWindow.axaml # WebView for skill tree display
-│       └── Converters/          # Value converters (RarityColor, GemColor, etc.)
+│       ├── OverlayWindow.axaml  # Ingame overlay (transparent, topmost)
+│       ├── SettingsWindow.axaml # Settings dialog (hotkeys, position)
+│       ├── Converters/          # Value converters (RarityColor, GemColor, etc.)
+│       ├── Services/            # OverlayService, HotkeyService
+│       ├── Settings/            # OverlaySettings (JSON persistence)
+│       └── Platform/            # Platform-specific (WindowsOverlayPlatform)
 ├── tests/
 │   └── PathPilot.Core.Tests/
 └── tools/
@@ -36,6 +41,7 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - **Gem display**: Colors, levels, quality, acquisition info (quest/vendor)
 - **Item display**: Rarity colors, mod highlighting, tooltips with full details
 - **Skill tree viewer**: Embedded WebView (Chromium) to display passive tree in-app
+- **Ingame Overlay**: Transparent overlay showing gems, works over PoE (Windows)
 
 ## Technical Notes
 
@@ -55,11 +61,30 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 ### UI Components
 - **TreeViewerWindow**: Uses WebViewControl-Avalonia (Chromium) for embedded browser
 - **Converters**: RarityColorConverter (Unique=orange, Rare=yellow, Magic=blue)
+- **OverlayWindow**: Transparent, topmost, draggable overlay
+- **SettingsWindow**: Hotkey configuration with key recording
+
+### Overlay System (Windows)
+- **HotkeyService**: Global keyboard hook via `SetWindowsHookEx(WH_KEYBOARD_LL)`
+- **WindowsOverlayPlatform**: Click-through via `WS_EX_TRANSPARENT | WS_EX_LAYERED`
+- **OverlaySettings**: Persisted to `~/.config/PathPilot/overlay-settings.json`
+- **Default Hotkeys**: F11 (toggle visibility), Ctrl+F11 (toggle interactive)
+- **Features**: Draggable, position saved, click-through mode, configurable hotkeys
 
 ### Gem Scraper
 - Scrapes gem data from poewiki.net
 - Uses `WebUtility.HtmlDecode()` for HTML entities (fixes apostrophe gems like "Battlemage's Cry")
 - Uses `Uri.EscapeDataString()` for URL encoding
+
+## Nächste Session
+
+Frage den Benutzer welches TODO er als nächstes angehen möchte.
+
+## TODOs / Planned Features
+
+- [ ] **Skilltree Viewer wie pobb.in**: Interaktiver Skilltree mit Node-Auswahl, Hover-Infos, und voller Funktionalität wie auf pobb.in
+- [x] **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird (Build-Info, Gems, Items)
+- [ ] **Quest Tracker**: Zeigt an welche Quests als nächstes erledigt werden sollten (Skill Points, Trials, wichtige Items)
 
 ## Language
 

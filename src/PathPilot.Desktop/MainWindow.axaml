@@ -44,6 +44,23 @@
                             Foreground="White"
                             Padding="15,8"
                             CornerRadius="5"/>
+                    <Button Name="OverlayButton"
+                            Content="Overlay"
+                            Click="OverlayButton_Click"
+                            Background="#ff6b35"
+                            Foreground="White"
+                            Padding="15,8"
+                            CornerRadius="5"
+                            ToolTip.Tip="Show overlay (F11 to toggle)"/>
+                    <Button Name="SettingsButton"
+                            Content="⚙"
+                            Click="SettingsButton_Click"
+                            Background="#404040"
+                            Foreground="White"
+                            FontSize="18"
+                            Padding="12,6"
+                            CornerRadius="5"
+                            ToolTip.Tip="Settings"/>
                 </StackPanel>
             </Grid>
         </Border>
