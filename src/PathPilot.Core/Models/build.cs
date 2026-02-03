@@ -39,6 +39,33 @@ namespace PathPilot.Core.Models
         public List<ItemSet> ItemSets { get; set; } = new List<ItemSet>();
 
         /// <summary>
+        /// Passive skill trees for each loadout
+        /// </summary>
+        public List<SkillTreeSet> TreeSets { get; set; } = new List<SkillTreeSet>();
+
+        /// <summary>
+        /// Currently selected tree set index
+        /// </summary>
+        public int ActiveTreeSetIndex { get; set; } = 0;
+
+        /// <summary>
+        /// Gets the currently active tree set
+        /// </summary>
+        public SkillTreeSet? ActiveTreeSet
+        {
+            get
+            {
+                if (TreeSets.Count == 0)
+                    return null;
+
+                if (ActiveTreeSetIndex < 0 || ActiveTreeSetIndex >= TreeSets.Count)
+                    ActiveTreeSetIndex = 0;
+
+                return TreeSets[ActiveTreeSetIndex];
+            }
+        }
+
+        /// <summary>
         /// Currently selected skill set index
         /// </summary>
         public int ActiveSkillSetIndex { get; set; } = 0;
@@ -47,6 +74,38 @@ namespace PathPilot.Core.Models
         /// Currently selected item set index
         /// </summary>
         public int ActiveItemSetIndex { get; set; } = 0;
+
+        /// <summary>
+        /// Gets all unique loadout names from SkillSets, ItemSets, and TreeSets
+        /// </summary>
+        public List<string> GetLoadoutNames()
+        {
+            var skillSetNames = SkillSets.Select(s => s.Title);
+            var itemSetNames = ItemSets.Select(i => i.Title);
+            var treeSetNames = TreeSets.Select(t => t.Title);
+            return skillSetNames.Union(itemSetNames).Union(treeSetNames).ToList();
+        }
+
+        /// <summary>
+        /// Sets skill set, item set, and tree set to match the given loadout name
+        /// </summary>
+        public void SetActiveLoadout(string loadoutName)
+        {
+            // Find matching skill set
+            var skillSetIndex = SkillSets.FindIndex(s => s.Title == loadoutName);
+            if (skillSetIndex >= 0)
+                ActiveSkillSetIndex = skillSetIndex;
+
+            // Find matching item set
+            var itemSetIndex = ItemSets.FindIndex(i => i.Title == loadoutName);
+            if (itemSetIndex >= 0)
+                ActiveItemSetIndex = itemSetIndex;
+
+            // Find matching tree set
+            var treeSetIndex = TreeSets.FindIndex(t => t.Title == loadoutName);
+            if (treeSetIndex >= 0)
+                ActiveTreeSetIndex = treeSetIndex;
+        }
 
         /// <summary>
         /// Gets the currently active skill set

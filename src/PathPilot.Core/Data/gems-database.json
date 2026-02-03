@@ -224,6 +224,55 @@
       }
     ]
   },
+  "Battlemage's Cry": {
+    "Name": "Battlemage's Cry",
+    "Color": "Red",
+    "Sources": [
+      {
+        "Type": 0,
+        "Act": 3,
+        "QuestName": "Lost in Love",
+        "VendorName": null,
+        "Classes": null,
+        "AvailableForClasses": [
+          "Templar"
+        ]
+      },
+      {
+        "Type": 1,
+        "Act": 3,
+        "QuestName": "Lost in LoveAct 3",
+        "VendorName": "Clarissa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "Duelist",
+          "Marauder",
+          "Templar",
+          "Scion"
+        ]
+      },
+      {
+        "Type": 2,
+        "Act": 3,
+        "QuestName": "A Fixture of FateAct 3",
+        "VendorName": "Siosa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      },
+      {
+        "Type": 3,
+        "Act": 6,
+        "QuestName": "Fallen from GraceAct 6",
+        "VendorName": "Lilly Roth",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      }
+    ]
+  },
   "Berserk": {
     "Name": "Berserk",
     "Color": "Red",
@@ -1295,6 +1344,55 @@
           "Marauder",
           "Templar",
           "Scion"
+        ]
+      },
+      {
+        "Type": 3,
+        "Act": 6,
+        "QuestName": "Fallen from GraceAct 6",
+        "VendorName": "Lilly Roth",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      }
+    ]
+  },
+  "General's Cry": {
+    "Name": "General's Cry",
+    "Color": "Red",
+    "Sources": [
+      {
+        "Type": 0,
+        "Act": 3,
+        "QuestName": "Lost in Love",
+        "VendorName": null,
+        "Classes": null,
+        "AvailableForClasses": [
+          "Marauder"
+        ]
+      },
+      {
+        "Type": 1,
+        "Act": 3,
+        "QuestName": "Lost in LoveAct 3",
+        "VendorName": "Clarissa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "Duelist",
+          "Marauder",
+          "Templar",
+          "Scion"
+        ]
+      },
+      {
+        "Type": 2,
+        "Act": 3,
+        "QuestName": "A Fixture of FateAct 3",
+        "VendorName": "Siosa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
         ]
       },
       {
@@ -3351,6 +3449,84 @@
         "Classes": null,
         "AvailableForClasses": [
           "All"
+        ]
+      }
+    ]
+  },
+  "Warlord's Mark": {
+    "Name": "Warlord's Mark",
+    "Color": "Red",
+    "Sources": [
+      {
+        "Type": 0,
+        "Act": 2,
+        "QuestName": "Intruders in Black",
+        "VendorName": null,
+        "Classes": null,
+        "AvailableForClasses": [
+          "Duelist",
+          "Marauder"
+        ]
+      },
+      {
+        "Type": 1,
+        "Act": 2,
+        "QuestName": "Intruders in BlackAct 2",
+        "VendorName": "Yeena",
+        "Classes": null,
+        "AvailableForClasses": [
+          "Ranger",
+          "Duelist",
+          "Marauder",
+          "Scion"
+        ]
+      },
+      {
+        "Type": 2,
+        "Act": 3,
+        "QuestName": "A Fixture of FateAct 3",
+        "VendorName": "Siosa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      },
+      {
+        "Type": 3,
+        "Act": 6,
+        "QuestName": "Fallen from GraceAct 6",
+        "VendorName": "Lilly Roth",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      }
+    ]
+  },
+  "Alchemist's Mark": {
+    "Name": "Alchemist's Mark",
+    "Color": "Green",
+    "Sources": [
+      {
+        "Type": 0,
+        "Act": 3,
+        "QuestName": "Lost in Love",
+        "VendorName": null,
+        "Classes": null,
+        "AvailableForClasses": [
+          "Ranger"
+        ]
+      },
+      {
+        "Type": 1,
+        "Act": 3,
+        "QuestName": "Lost in LoveAct 3",
+        "VendorName": "Clarissa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "Shadow",
+          "Ranger",
+          "Scion"
         ]
       }
     ]
@@ -5919,6 +6095,56 @@
       }
     ]
   },
+  "Poacher's Mark": {
+    "Name": "Poacher's Mark",
+    "Color": "Green",
+    "Sources": [
+      {
+        "Type": 0,
+        "Act": 2,
+        "QuestName": "Intruders in Black",
+        "VendorName": null,
+        "Classes": null,
+        "AvailableForClasses": [
+          "Ranger",
+          "Duelist"
+        ]
+      },
+      {
+        "Type": 1,
+        "Act": 2,
+        "QuestName": "Intruders in BlackAct 2",
+        "VendorName": "Yeena",
+        "Classes": null,
+        "AvailableForClasses": [
+          "Shadow",
+          "Ranger",
+          "Duelist",
+          "Scion"
+        ]
+      },
+      {
+        "Type": 2,
+        "Act": 3,
+        "QuestName": "A Fixture of FateAct 3",
+        "VendorName": "Siosa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      },
+      {
+        "Type": 3,
+        "Act": 6,
+        "QuestName": "Fallen from GraceAct 6",
+        "VendorName": "Lilly Roth",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      }
+    ]
+  },
   "Poisonous Concoction": {
     "Name": "Poisonous Concoction",
     "Color": "Green",
@@ -6474,6 +6700,56 @@
           "Ranger",
           "Duelist",
           "Scion"
+        ]
+      },
+      {
+        "Type": 3,
+        "Act": 6,
+        "QuestName": "Fallen from GraceAct 6",
+        "VendorName": "Lilly Roth",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      }
+    ]
+  },
+  "Sniper's Mark": {
+    "Name": "Sniper's Mark",
+    "Color": "Green",
+    "Sources": [
+      {
+        "Type": 0,
+        "Act": 1,
+        "QuestName": "Breaking Some Eggs",
+        "VendorName": null,
+        "Classes": null,
+        "AvailableForClasses": [
+          "Ranger",
+          "Duelist"
+        ]
+      },
+      {
+        "Type": 1,
+        "Act": 1,
+        "QuestName": "Breaking Some EggsAct 1",
+        "VendorName": "Nessa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "Shadow",
+          "Ranger",
+          "Duelist",
+          "Scion"
+        ]
+      },
+      {
+        "Type": 2,
+        "Act": 3,
+        "QuestName": "A Fixture of FateAct 3",
+        "VendorName": "Siosa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
         ]
       },
       {
@@ -7587,6 +7863,55 @@
           "Witch",
           "Templar",
           "Scion"
+        ]
+      },
+      {
+        "Type": 3,
+        "Act": 6,
+        "QuestName": "Fallen from GraceAct 6",
+        "VendorName": "Lilly Roth",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      }
+    ]
+  },
+  "Assassin's Mark": {
+    "Name": "Assassin's Mark",
+    "Color": "Blue",
+    "Sources": [
+      {
+        "Type": 0,
+        "Act": 2,
+        "QuestName": "Intruders in Black",
+        "VendorName": null,
+        "Classes": null,
+        "AvailableForClasses": [
+          "Shadow"
+        ]
+      },
+      {
+        "Type": 1,
+        "Act": 2,
+        "QuestName": "Intruders in BlackAct 2",
+        "VendorName": "Yeena",
+        "Classes": null,
+        "AvailableForClasses": [
+          "Shadow",
+          "Ranger",
+          "Duelist",
+          "Scion"
+        ]
+      },
+      {
+        "Type": 2,
+        "Act": 3,
+        "QuestName": "A Fixture of FateAct 3",
+        "VendorName": "Siosa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
         ]
       },
       {
@@ -13839,6 +14164,54 @@
         "AvailableForClasses": [
           "Witch",
           "Marauder",
+          "Templar",
+          "Scion"
+        ]
+      },
+      {
+        "Type": 2,
+        "Act": 3,
+        "QuestName": "A Fixture of FateAct 3",
+        "VendorName": "Siosa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      },
+      {
+        "Type": 3,
+        "Act": 6,
+        "QuestName": "Fallen from GraceAct 6",
+        "VendorName": "Lilly Roth",
+        "Classes": null,
+        "AvailableForClasses": [
+          "All"
+        ]
+      }
+    ]
+  },
+  "Guardian's Blessing Support": {
+    "Name": "Guardian's Blessing Support",
+    "Color": "Red",
+    "Sources": [
+      {
+        "Type": 0,
+        "Act": 3,
+        "QuestName": "A Fixture of Fate",
+        "VendorName": null,
+        "Classes": null,
+        "AvailableForClasses": [
+          "Templar"
+        ]
+      },
+      {
+        "Type": 1,
+        "Act": 3,
+        "QuestName": "A Fixture of FateAct 3",
+        "VendorName": "Clarissa",
+        "Classes": null,
+        "AvailableForClasses": [
+          "Witch",
           "Templar",
           "Scion"
         ]

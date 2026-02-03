@@ -21,36 +21,72 @@
                     </StackPanel>
                 </StackPanel>
                 
-                <Button Grid.Column="2"
-                        Name="ImportButton"
-                        Content="Import Build"
-                        Click="ImportButton_Click"
-                        Background="#4a9eff"
-                        Foreground="White"
-                        Padding="15,8"
-                        CornerRadius="5"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+                    <Button Name="LoadButton"
+                            Content="Load"
+                            Click="LoadButton_Click"
+                            Background="#404040"
+                            Foreground="White"
+                            Padding="15,8"
+                            CornerRadius="5"/>
+                    <Button Name="SaveButton"
+                            Content="Save"
+                            Click="SaveButton_Click"
+                            Background="#2d8a2d"
+                            Foreground="White"
+                            Padding="15,8"
+                            CornerRadius="5"
+                            IsEnabled="False"/>
+                    <Button Name="ImportButton"
+                            Content="Import"
+                            Click="ImportButton_Click"
+                            Background="#4a9eff"
+                            Foreground="White"
+                            Padding="15,8"
+                            CornerRadius="5"/>
+                </StackPanel>
             </Grid>
         </Border>
 
         <!-- Main Content -->
         <ScrollViewer Grid.Row="1" Padding="20">
             <StackPanel Spacing="20">
-                <!-- Loadout Selectors -->
-                <Grid ColumnDefinitions="*,20,*">
-                    <StackPanel Grid.Column="0" Spacing="8">
-                        <TextBlock Text="Skill Set:" Foreground="#aaa" FontSize="14"/>
-                        <ComboBox Name="SkillSetSelector"
-                                  SelectionChanged="SkillSetSelector_SelectionChanged"
-                                  MinWidth="250"/>
-                    </StackPanel>
-                    
-                    <StackPanel Grid.Column="2" Spacing="8">
-                        <TextBlock Text="Item Set:" Foreground="#aaa" FontSize="14"/>
-                        <ComboBox Name="ItemSetSelector"
-                                  SelectionChanged="ItemSetSelector_SelectionChanged"
-                                  MinWidth="250"/>
-                    </StackPanel>
-                </Grid>
+                <!-- Loadout Selector and Tree Info -->
+                <Border Background="#252525" CornerRadius="8" Padding="20">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <!-- Loadout Selector -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                            <TextBlock Text="Loadout:"
+                                       Foreground="#aaa"
+                                       FontSize="16"
+                                       VerticalAlignment="Center"/>
+                            <ComboBox Name="LoadoutSelector"
+                                      SelectionChanged="LoadoutSelector_SelectionChanged"
+                                      MinWidth="300"
+                                      FontSize="14"/>
+                        </StackPanel>
+
+                        <!-- Tree Info -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="🌳" FontSize="16" VerticalAlignment="Center"/>
+                                <TextBlock Name="TreePointsText"
+                                           Text="Points: --"
+                                           Foreground="#4aff9d"
+                                           FontSize="14"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button Name="OpenTreeButton"
+                                    Content="Open Tree"
+                                    Click="OpenTreeButton_Click"
+                                    Background="#6a4aff"
+                                    Foreground="White"
+                                    Padding="12,6"
+                                    CornerRadius="5"
+                                    IsEnabled="False"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
 
                 <Grid ColumnDefinitions="2*,20,*">
                     <!-- Left Column: Gems -->
@@ -175,6 +211,20 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="models:Item">
                                         <Border Background="#1a1a1a" CornerRadius="5" Margin="0,0,0,10" Padding="15">
+                                            <ToolTip.Tip>
+                                                <Border Background="#0a0a0a"
+                                                        BorderBrush="#444"
+                                                        BorderThickness="1"
+                                                        CornerRadius="5"
+                                                        Padding="12"
+                                                        MaxWidth="400">
+                                                    <TextBlock Text="{Binding FormattedText}"
+                                                               FontFamily="Consolas, monospace"
+                                                               FontSize="12"
+                                                               Foreground="#ddd"
+                                                               TextWrapping="Wrap"/>
+                                                </Border>
+                                            </ToolTip.Tip>
                                             <StackPanel Spacing="6">
                                                 <!-- Slot -->
                                                 <TextBlock Text="{Binding Slot}" FontSize="11" Foreground="#666"/>

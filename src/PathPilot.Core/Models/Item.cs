@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace PathPilot.Core.Models;
 
 /// <summary>
@@ -29,6 +31,75 @@ public class Item
     /// Raw item text from PoB
     /// </summary>
     public string RawText { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Formatted item text with PoB tags removed and ranges calculated
+    /// </summary>
+    public string FormattedText => FormatRawText(RawText);
+
+    private static string FormatRawText(string rawText)
+    {
+        if (string.IsNullOrEmpty(rawText))
+            return string.Empty;
+
+        var lines = rawText.Split('\n');
+        var result = new List<string>();
+
+        // Lines to skip (metadata)
+        var skipPrefixes = new[] { "Rarity:", "New Item", "Crafted:", "Prefix:", "Suffix:", "LevelReq:", "Implicits:", "Sockets:" };
+
+        foreach (var line in lines)
+        {
+            var trimmedLine = line.Trim();
+
+            // Skip empty lines and metadata lines
+            if (string.IsNullOrWhiteSpace(trimmedLine))
+                continue;
+            if (skipPrefixes.Any(p => trimmedLine.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            // Process the line to remove tags and calculate ranges
+            var processed = ProcessLine(trimmedLine);
+            if (!string.IsNullOrWhiteSpace(processed))
+                result.Add(processed);
+        }
+
+        return string.Join("\n", result);
+    }
+
+    private static string ProcessLine(string line)
+    {
+        // First, extract all range values and store them
+        var rangePattern = new Regex(@"\{range:([\d.]+)\}");
+        double currentRange = 0.5; // Default to middle if no range specified
+
+        var rangeMatch = rangePattern.Match(line);
+        if (rangeMatch.Success)
+        {
+            double.TryParse(rangeMatch.Groups[1].Value, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out currentRange);
+        }
+
+        // Remove all PoB tags: {range:X}, {tags:...}, {crafted}, {variant:X}, etc.
+        var result = Regex.Replace(line, @"\{[^}]+\}", "");
+
+        // Calculate actual values from ranges like (10-16) or (23-30)
+        result = Regex.Replace(result, @"\((\d+)-(\d+)\)", match =>
+        {
+            if (int.TryParse(match.Groups[1].Value, out int min) &&
+                int.TryParse(match.Groups[2].Value, out int max))
+            {
+                var value = (int)Math.Round(min + currentRange * (max - min));
+                return value.ToString();
+            }
+            return match.Value;
+        });
+
+        // Clean up extra whitespace
+        result = Regex.Replace(result, @"\s+", " ").Trim();
+
+        return result;
+    }
 
     /// <summary>
     /// Required sockets (list of colors)

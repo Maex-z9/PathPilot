@@ -4,7 +4,9 @@ using PathPilot.Core.Models;
 using PathPilot.Core.Parsers;
 using PathPilot.Core.Services;
 using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace PathPilot.Desktop;
 
@@ -90,6 +92,7 @@ public partial class MainWindow : Window
                         PopulateLoadoutSelectors();
                         UpdateDisplayedLoadout();
                         BuildTitleText.Text = _currentBuild.CharacterDescription;
+                        SaveButton.IsEnabled = true;
                     }
 
                     dialog.Close();
@@ -135,35 +138,24 @@ public partial class MainWindow : Window
     {
         if (_currentBuild == null) return;
 
-        // Populate skill set selector
-        SkillSetSelector.ItemsSource = _currentBuild.SkillSets
-            .Select((ss, index) => new { Index = index, Title = ss.Title, Display = $"{ss.Title} ({ss.TotalGems} gems)" })
-            .ToList();
-        SkillSetSelector.DisplayMemberBinding = new Avalonia.Data.Binding("Display");
-        if (_currentBuild.SkillSets.Count > 0)
-            SkillSetSelector.SelectedIndex = 0;
+        // Populate unified loadout selector with all unique loadout names
+        var loadoutNames = _currentBuild.GetLoadoutNames();
+        LoadoutSelector.ItemsSource = loadoutNames;
 
-        // Populate item set selector
-        ItemSetSelector.ItemsSource = _currentBuild.ItemSets
-            .Select((its, index) => new { Index = index, Title = its.Title, Display = $"{its.Title} ({its.Items.Count} items)" })
-            .ToList();
-        ItemSetSelector.DisplayMemberBinding = new Avalonia.Data.Binding("Display");
-        if (_currentBuild.ItemSets.Count > 0)
-            ItemSetSelector.SelectedIndex = 0;
+        if (loadoutNames.Count > 0)
+            LoadoutSelector.SelectedIndex = 0;
     }
 
-    private void SkillSetSelector_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void LoadoutSelector_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_currentBuild == null || SkillSetSelector.SelectedIndex < 0) return;
-        _currentBuild.ActiveSkillSetIndex = SkillSetSelector.SelectedIndex;
-        UpdateDisplayedLoadout();
-    }
+        if (_currentBuild == null || LoadoutSelector.SelectedItem == null) return;
 
-    private void ItemSetSelector_SelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_currentBuild == null || ItemSetSelector.SelectedIndex < 0) return;
-        _currentBuild.ActiveItemSetIndex = ItemSetSelector.SelectedIndex;
-        UpdateDisplayedLoadout();
+        var selectedLoadout = LoadoutSelector.SelectedItem.ToString();
+        if (!string.IsNullOrEmpty(selectedLoadout))
+        {
+            _currentBuild.SetActiveLoadout(selectedLoadout);
+            UpdateDisplayedLoadout();
+        }
     }
 
     private void UpdateDisplayedLoadout()
@@ -201,5 +193,208 @@ public partial class MainWindow : Window
         {
             ItemsListBox.ItemsSource = null;
         }
+
+        // Update tree info
+        var activeTreeSet = _currentBuild.ActiveTreeSet;
+        if (activeTreeSet != null)
+        {
+            TreePointsText.Text = $"Points: {activeTreeSet.PointsUsed}";
+            OpenTreeButton.IsEnabled = !string.IsNullOrEmpty(activeTreeSet.TreeUrl);
+        }
+        else
+        {
+            TreePointsText.Text = "Points: --";
+            OpenTreeButton.IsEnabled = false;
+        }
+    }
+
+    private async void OpenTreeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var activeTreeSet = _currentBuild?.ActiveTreeSet;
+        if (activeTreeSet == null || string.IsNullOrEmpty(activeTreeSet.TreeUrl))
+            return;
+
+        try
+        {
+            var title = $"Skill Tree - {activeTreeSet.Title}";
+            var treeWindow = new TreeViewerWindow(activeTreeSet.TreeUrl, title);
+            await treeWindow.ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error opening tree viewer: {ex.Message}");
+        }
+    }
+
+    private async void SaveButton_Click(object? sender, RoutedEventArgs e)
+    {
+        if (_currentBuild == null) return;
+
+        // Create save dialog with name input
+        var dialog = new Window
+        {
+            Title = "Save Build",
+            Width = 400,
+            Height = 180,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
+
+        panel.Children.Add(new TextBlock { Text = "Enter a name for this build:" });
+
+        var nameTextBox = new TextBox
+        {
+            Text = _currentBuild.Name,
+            Watermark = "Build name..."
+        };
+        panel.Children.Add(nameTextBox);
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Spacing = 10
+        };
+
+        var saveBtn = new Button { Content = "Save", Background = Avalonia.Media.Brushes.Green };
+        var cancelBtn = new Button { Content = "Cancel" };
+
+        saveBtn.Click += (s, ev) =>
+        {
+            try
+            {
+                var buildName = string.IsNullOrWhiteSpace(nameTextBox.Text)
+                    ? _currentBuild.Name
+                    : nameTextBox.Text.Trim();
+
+                _currentBuild.Name = buildName;
+                var filePath = BuildStorage.SaveBuild(_currentBuild);
+                Console.WriteLine($"Build saved to: {filePath}");
+                BuildTitleText.Text = _currentBuild.CharacterDescription;
+                dialog.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving build: {ex.Message}");
+            }
+        };
+
+        cancelBtn.Click += (s, ev) => dialog.Close();
+
+        buttonPanel.Children.Add(cancelBtn);
+        buttonPanel.Children.Add(saveBtn);
+        panel.Children.Add(buttonPanel);
+
+        dialog.Content = panel;
+        await dialog.ShowDialog(this);
+    }
+
+    private async void LoadButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var savedBuilds = BuildStorage.GetSavedBuilds();
+
+        if (savedBuilds.Count == 0)
+        {
+            var emptyDialog = new Window
+            {
+                Title = "No Saved Builds",
+                Width = 300,
+                Height = 120,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Content = new StackPanel
+                {
+                    Margin = new Avalonia.Thickness(20),
+                    Children =
+                    {
+                        new TextBlock { Text = "No saved builds found." },
+                        new Button { Content = "OK", Margin = new Avalonia.Thickness(0, 15, 0, 0) }
+                    }
+                }
+            };
+            var okBtn = (Button)((StackPanel)emptyDialog.Content).Children[1];
+            okBtn.Click += (s, ev) => emptyDialog.Close();
+            await emptyDialog.ShowDialog(this);
+            return;
+        }
+
+        // Create load dialog
+        var dialog = new Window
+        {
+            Title = "Load Build",
+            Width = 500,
+            Height = 400,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+
+        var panel = new StackPanel { Margin = new Avalonia.Thickness(20), Spacing = 15 };
+        panel.Children.Add(new TextBlock { Text = "Select a build to load:", FontWeight = Avalonia.Media.FontWeight.Bold });
+
+        var listBox = new ListBox
+        {
+            Height = 250,
+            ItemsSource = savedBuilds,
+            ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<SavedBuildInfo>((info, _) =>
+            {
+                var sp = new StackPanel { Margin = new Avalonia.Thickness(5) };
+                sp.Children.Add(new TextBlock { Text = info?.Name ?? "Unknown", FontWeight = Avalonia.Media.FontWeight.SemiBold });
+                sp.Children.Add(new TextBlock { Text = info?.Description ?? "", Foreground = Avalonia.Media.Brushes.Gray, FontSize = 12 });
+                sp.Children.Add(new TextBlock { Text = info?.LastModified.ToString("g") ?? "", Foreground = Avalonia.Media.Brushes.DarkGray, FontSize = 11 });
+                return sp;
+            }, supportsRecycling: true)
+        };
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+            Spacing = 10
+        };
+
+        var loadBtn = new Button { Content = "Load" };
+        var deleteBtn = new Button { Content = "Delete", Background = Avalonia.Media.Brushes.DarkRed };
+        var cancelBtn = new Button { Content = "Cancel" };
+
+        loadBtn.Click += (s, ev) =>
+        {
+            if (listBox.SelectedItem is SavedBuildInfo selectedBuild)
+            {
+                var build = BuildStorage.LoadBuild(selectedBuild.FilePath);
+                if (build != null)
+                {
+                    _currentBuild = build;
+                    PopulateLoadoutSelectors();
+                    UpdateDisplayedLoadout();
+                    BuildTitleText.Text = _currentBuild.CharacterDescription;
+                    SaveButton.IsEnabled = true;
+                    Console.WriteLine($"Build loaded: {_currentBuild.Name}");
+                }
+                dialog.Close();
+            }
+        };
+
+        deleteBtn.Click += (s, ev) =>
+        {
+            if (listBox.SelectedItem is SavedBuildInfo selectedBuild)
+            {
+                BuildStorage.DeleteBuild(selectedBuild.FilePath);
+                var updatedList = BuildStorage.GetSavedBuilds();
+                listBox.ItemsSource = updatedList;
+                if (updatedList.Count == 0)
+                    dialog.Close();
+            }
+        };
+
+        cancelBtn.Click += (s, ev) => dialog.Close();
+
+        buttonPanel.Children.Add(deleteBtn);
+        buttonPanel.Children.Add(cancelBtn);
+        buttonPanel.Children.Add(loadBtn);
+
+        panel.Children.Add(listBox);
+        panel.Children.Add(buttonPanel);
+
+        dialog.Content = panel;
+        await dialog.ShowDialog(this);
     }
 }

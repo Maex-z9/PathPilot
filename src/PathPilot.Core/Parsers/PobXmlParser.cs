@@ -43,8 +43,8 @@ namespace PathPilot.Core.Parsers
                 // Parse items for each item set
                 ParseItemSets(root, build);
 
-                // Parse skill tree (TODO: future implementation)
-                // ParseSkillTree(root, build);
+                // Parse skill trees
+                ParseTreeSets(root, build);
             }
             catch (Exception ex)
             {
@@ -481,6 +481,88 @@ namespace PathPilot.Core.Parsers
                 "false" or "0" or "no" => false,
                 _ => defaultValue
             };
+        }
+
+        private void ParseTreeSets(XElement root, Build build)
+        {
+            var treeElement = root.Element("Tree");
+            if (treeElement == null)
+                return;
+
+            // Parse each Spec element (different tree loadouts)
+            var specElements = treeElement.Elements("Spec");
+
+            if (!specElements.Any())
+            {
+                // No specs, try to parse the tree element itself as a single spec
+                var defaultTreeSet = ParseSingleTreeSpec(treeElement, "Default");
+                if (defaultTreeSet != null)
+                    build.TreeSets.Add(defaultTreeSet);
+            }
+            else
+            {
+                foreach (var specElement in specElements)
+                {
+                    var title = specElement.Attribute("title")?.Value ?? "Unnamed Tree";
+                    var treeSet = ParseSingleTreeSpec(specElement, title);
+                    if (treeSet != null)
+                        build.TreeSets.Add(treeSet);
+                }
+            }
+
+            Console.WriteLine($"TreeSets: {build.TreeSets.Count}");
+        }
+
+        private SkillTreeSet? ParseSingleTreeSpec(XElement specElement, string title)
+        {
+            var treeSet = new SkillTreeSet
+            {
+                Title = title
+            };
+
+            // Get the tree URL from the URL element
+            var urlElement = specElement.Element("URL");
+            if (urlElement != null)
+            {
+                treeSet.TreeUrl = urlElement.Value?.Trim() ?? string.Empty;
+            }
+
+            // Parse Sockets (jewel sockets and their jewels)
+            var socketsElement = specElement.Element("Sockets");
+            // Future: parse socketed jewels
+
+            // Parse allocated nodes from the URL or nodes element
+            // PoB encodes nodes in a base64 URL format, but also has a Nodes element
+
+            // For now, extract points from the treeVersion and count nodes
+            var treeVersion = specElement.Attribute("treeVersion")?.Value;
+
+            // Count ascendancy points from ascendClassId
+            var ascendClassId = specElement.Attribute("ascendClassId")?.Value;
+            if (!string.IsNullOrEmpty(ascendClassId) && ascendClassId != "0")
+            {
+                treeSet.AscendancyPointsUsed = 8; // Assume full ascendancy if selected
+            }
+
+            // Parse keystones, notables from the URL
+            // The tree URL contains encoded node data - we'll extract stats from notes instead
+            var notesElement = specElement.Element("Notes");
+            if (notesElement != null)
+            {
+                // Notes sometimes contain build-relevant info
+            }
+
+            // Try to estimate points from URL length or other hints
+            // For a more accurate count, we'd need to decode the passive tree URL
+            if (!string.IsNullOrEmpty(treeSet.TreeUrl))
+            {
+                // Rough estimate: each node takes ~2 chars in the URL encoding
+                // This is a very rough approximation
+                var urlPart = treeSet.TreeUrl.Split('/').LastOrDefault() ?? "";
+                treeSet.PointsUsed = Math.Min(123, urlPart.Length / 2); // Cap at max points
+            }
+
+            return treeSet;
         }
     }
 }

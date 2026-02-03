@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using Newtonsoft.Json;
 using PathPilot.Core.Models;
+using System.Net;
 
 Console.WriteLine("PoE Wiki Gem Scraper");
 Console.WriteLine("====================\n");
@@ -76,7 +77,7 @@ public class GemScraper
         foreach (var link in gemLinks)
         {
             var href = link.GetAttributeValue("href", "");
-            var title = link.GetAttributeValue("title", "");
+            var title = WebUtility.HtmlDecode(link.GetAttributeValue("title", ""));
             
             if (href.Contains("/wiki/") && 
                 !href.Contains("File:") && 
@@ -134,8 +135,8 @@ private async Task<GemData?> ScrapeGemPage(string gemName)
 {
     try
     {
-        // Create URL-friendly name
-        string urlName = gemName.Replace(" ", "_");
+        // Create URL-friendly name (encode special characters like apostrophes)
+        string urlName = Uri.EscapeDataString(gemName.Replace(" ", "_"));
         string url = $"https://www.poewiki.net/wiki/{urlName}";
         
         var htmlDoc = await Task.Run(() => _web.Load(url));

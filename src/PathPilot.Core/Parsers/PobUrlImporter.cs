@@ -115,8 +115,8 @@ public class PobUrlImporter
         
         if (uri.Host.ToLower().Contains("pobb.in"))
         {
-            // pobb.in format: https://pobb.in/raw/CODE
-            return $"https://pobb.in/raw/{code}";
+            // pobb.in format: https://pobb.in/pob/CODE
+            return $"https://pobb.in/pob/{code}";
         }
         else if (uri.Host.ToLower().Contains("pastebin.com"))
         {

@@ -1,6 +1,52 @@
 namespace PathPilot.Core.Models;
 
 /// <summary>
+/// Represents a skill tree loadout (can have multiple per build)
+/// </summary>
+public class SkillTreeSet
+{
+    /// <summary>
+    /// Title/name of this tree set
+    /// </summary>
+    public string Title { get; set; } = "Default";
+
+    /// <summary>
+    /// The encoded tree URL from PoB
+    /// </summary>
+    public string TreeUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// All allocated passive skill node IDs
+    /// </summary>
+    public List<int> AllocatedNodes { get; set; } = new();
+
+    /// <summary>
+    /// Keystone names that are allocated
+    /// </summary>
+    public List<string> Keystones { get; set; } = new();
+
+    /// <summary>
+    /// Notable names that are allocated
+    /// </summary>
+    public List<string> Notables { get; set; } = new();
+
+    /// <summary>
+    /// Mastery effects selected
+    /// </summary>
+    public List<string> Masteries { get; set; } = new();
+
+    /// <summary>
+    /// Total points allocated
+    /// </summary>
+    public int PointsUsed { get; set; }
+
+    /// <summary>
+    /// Ascendancy points allocated
+    /// </summary>
+    public int AscendancyPointsUsed { get; set; }
+}
+
+/// <summary>
 /// Represents the passive skill tree of a build
 /// </summary>
 public class SkillTree
