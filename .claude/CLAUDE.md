@@ -8,16 +8,18 @@ A Path of Exile build guide desktop application built with .NET and Avalonia UI.
 PathPilot/
 ├── src/
 │   ├── PathPilot.Core/          # Core library
-│   │   ├── Models/              # Data models (Build, Gem, Item, SkillSet, ItemSet)
-│   │   ├── Parsers/             # PoB import parsing (PobXmlParser, PobCodeDecoder)
-│   │   └── Data/                # Gem database
+│   │   ├── Models/              # Data models (Build, Gem, Item, SkillSet, ItemSet, SkillTreeSet)
+│   │   ├── Parsers/             # PoB import parsing (PobXmlParser, PobCodeDecoder, PobUrlImporter)
+│   │   ├── Services/            # BuildStorage (save/load), GemDataService
+│   │   └── Data/                # Gem database (gems-database.json)
 │   └── PathPilot.Desktop/       # Avalonia desktop app
-│       ├── MainWindow.axaml     # Main UI
+│       ├── MainWindow.axaml     # Main UI (gems, items, loadout selector)
+│       ├── TreeViewerWindow.axaml # WebView for skill tree display
 │       └── Converters/          # Value converters (RarityColor, GemColor, etc.)
 ├── tests/
 │   └── PathPilot.Core.Tests/
 └── tools/
-    └── GemScraper/              # Tool to scrape gem data
+    └── GemScraper/              # Tool to scrape gem acquisition data from PoE Wiki
 ```
 
 ## Running the Project
@@ -28,24 +30,36 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 
 ## Key Features
 
-- Import builds from Path of Building (paste code or pobb.in URLs)
-- Save/Load builds locally (stored in ~/.config/PathPilot/Builds/)
-- Unified loadout selector (changes SkillSet, ItemSet, and TreeSet together)
-- Gem display with colors, levels, quality, and acquisition info
-- Item display with rarity colors and mod highlighting
-- Item tooltips showing full item details (formatted from PoB's internal format)
-- Skill tree integration with "Open Tree" button to view in browser
+- **Import builds**: From Path of Building paste code or pobb.in URLs
+- **Save/Load builds**: Stored locally in `~/.config/PathPilot/Builds/` as JSON
+- **Unified loadout selector**: Changes SkillSet, ItemSet, and TreeSet together
+- **Gem display**: Colors, levels, quality, acquisition info (quest/vendor)
+- **Item display**: Rarity colors, mod highlighting, tooltips with full details
+- **Skill tree viewer**: Embedded WebView (Chromium) to display passive tree in-app
 
 ## Technical Notes
 
-- **Unified Loadout System**: `Build.SetActiveLoadout(name)` sets both `ActiveSkillSetIndex` and `ActiveItemSetIndex` by matching the loadout name
+### Models
+- **Build**: Main container with SkillSets, ItemSets, TreeSets
+- **SkillTreeSet**: Title, TreeUrl, PointsUsed for each loadout
+- **Item.FormattedText**: Cleans PoB raw text, calculates range values
 
-- **Item.FormattedText**: Computed property that cleans up PoB's raw item text by:
-  - Removing metadata lines (Rarity, Prefix, Suffix, LevelReq, etc.)
-  - Removing PoB tags (`{range:X}`, `{tags:...}`, `{crafted}`, etc.)
-  - Calculating actual values from ranges (e.g., `{range:0.5}(10-16)` → `13`)
+### Parsers
+- **PobUrlImporter**: Uses `https://pobb.in/pob/{code}` endpoint (not /raw/)
+- **PobXmlParser**: Parses skills, items, and tree specs from PoB XML
 
-- **Converters**: RarityColorConverter maps item rarity to PoE colors (Unique=orange, Rare=yellow, Magic=blue)
+### Services
+- **BuildStorage**: Save/load builds to JSON, list saved builds, delete builds
+- **GemDataService**: Loads gem database, provides acquisition info
+
+### UI Components
+- **TreeViewerWindow**: Uses WebViewControl-Avalonia (Chromium) for embedded browser
+- **Converters**: RarityColorConverter (Unique=orange, Rare=yellow, Magic=blue)
+
+### Gem Scraper
+- Scrapes gem data from poewiki.net
+- Uses `WebUtility.HtmlDecode()` for HTML entities (fixes apostrophe gems like "Battlemage's Cry")
+- Uses `Uri.EscapeDataString()` for URL encoding
 
 ## Language
 
