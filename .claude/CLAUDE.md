@@ -76,38 +76,34 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - Uses `WebUtility.HtmlDecode()` for HTML entities (fixes apostrophe gems like "Battlemage's Cry")
 - Uses `Uri.EscapeDataString()` for URL encoding
 
-## Nächste Session - Quest Tracker fortsetzen
+## Nächste Session - Quest Tracker erweitern
 
-### Bereits erstellt:
+### Bereits implementiert:
 - `PathPilot.Core/Models/Quest.cs` - Quest Model mit QuestReward enum
-- `PathPilot.Core/Services/QuestDataService.cs` - Alle wichtigen Quests (Act 1-10, Skill Points, Trials, Labs)
+- `PathPilot.Core/Services/QuestDataService.cs` - Korrekte Quest-Liste:
+  - 22 Skill Point Quests (Act 1-10)
+  - 12 Ascendancy Trials (6 Normal, 3 Cruel, 3 Merciless)
+  - 4 Labyrinth-Quests (Normal, Cruel, Merciless, Eternal)
+- `OverlayWindow.axaml` - Tab-Buttons [Gems] [Quests] implementiert
+- `CompletedTextDecorationConverter.cs` - Durchgestrichener Text für erledigte Quests
 
-### Nächste Schritte (Quest Tracker im Overlay):
-1. **OverlayWindow.axaml erweitern** - Tabs oder Toggle zwischen Gems/Quests
-2. Quest-Liste im Overlay anzeigen (kompakte Darstellung)
-3. Filtering nach Act (basierend auf Character-Level oder manuell)
-4. Checkbox zum Markieren erledigter Quests (click im Interactive-Mode)
-5. Progress-Speicherung in `~/.config/PathPilot/quest-progress.json`
-6. Nur unerledigte Quests anzeigen (oder Toggle)
+### Nächste Schritte:
+1. Progress-Speicherung in `~/.config/PathPilot/quest-progress.json`
+2. Filter nach Act oder nur unerledigte anzeigen
+3. Trials und Labs auch anzeigen (separate Tabs oder Abschnitte)
+4. Quest-Reward (+1 Passive, +2 Passives) anzeigen
 
-### UI-Konzept fürs Overlay:
-```
-+------------------+
-| Build: Name      |
-| [Gems] [Quests]  |  <- Toggle Buttons
-+------------------+
-| Act 2            |
-| [ ] Bandit Quest |
-|     The Forest   |
-| [x] Great White  |
-+------------------+
-```
-
-### Quest-Daten enthalten:
-- Alle Skill Point Quests (Act 1-10)
-- Ascendancy Trials (6 für Normal Lab, 3 für Cruel, 3 für Merciless)
-- Labyrinth-Quests (Normal, Cruel, Merciless)
-- Location, RecommendedLevel, IsOptional
+### Quest-Daten (22 Skill Points total, +2 für Bandits):
+- Act 1: 2 Quests (Dweller, Fairgraves)
+- Act 2: 2 Quests (Great White Beast, Bandits +2)
+- Act 3: 2 Quests (Victario, Piety's Pets)
+- Act 4: 1 Quest (Deshret)
+- Act 5: 2 Quests (Science, Kitava's Torments)
+- Act 6: 3 Quests (Father of War, Tukohama, Abberath)
+- Act 7: 3 Quests (Greust, Gruthkul, Kishara)
+- Act 8: 3 Quests (Love is Dead, Yugul, Gemling Legion)
+- Act 9: 2 Quests (Shakari, Kira)
+- Act 10: 2 Quests (Vilenta, End to Hunger)
 
 ## TODOs / Planned Features
 

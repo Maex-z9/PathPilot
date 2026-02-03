@@ -1,7 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Media;
 using PathPilot.Core.Models;
+using PathPilot.Core.Services;
 using PathPilot.Desktop.Platform;
 using PathPilot.Desktop.Settings;
 using System;
@@ -15,9 +18,11 @@ public partial class OverlayWindow : Window
 {
     private readonly IOverlayPlatform _platform;
     private readonly OverlaySettings _settings;
+    private readonly QuestDataService _questDataService;
     private Build? _currentBuild;
     private bool _isDragging;
     private Point _dragStartPoint;
+    private bool _showingGems = true;
 
     public OverlayWindow(OverlaySettings settings)
     {
@@ -25,6 +30,7 @@ public partial class OverlayWindow : Window
 
         _settings = settings;
         _platform = new WindowsOverlayPlatform();
+        _questDataService = new QuestDataService();
 
         // Set initial position from settings
         Position = new PixelPoint((int)_settings.OverlayX, (int)_settings.OverlayY);
@@ -39,6 +45,33 @@ public partial class OverlayWindow : Window
 
         // Update hotkey info text
         UpdateHotkeyInfoText();
+
+        // Load quests
+        LoadQuests();
+    }
+
+    private void LoadQuests()
+    {
+        var quests = _questDataService.GetSkillPointQuests();
+        QuestsListBox.ItemsSource = quests;
+    }
+
+    private void GemsTabButton_Click(object? sender, RoutedEventArgs e)
+    {
+        _showingGems = true;
+        GemsPanel.IsVisible = true;
+        QuestsPanel.IsVisible = false;
+        GemsTabButton.Background = new SolidColorBrush(Color.FromRgb(74, 158, 255));
+        QuestsTabButton.Background = new SolidColorBrush(Color.FromRgb(64, 64, 64));
+    }
+
+    private void QuestsTabButton_Click(object? sender, RoutedEventArgs e)
+    {
+        _showingGems = false;
+        GemsPanel.IsVisible = false;
+        QuestsPanel.IsVisible = true;
+        GemsTabButton.Background = new SolidColorBrush(Color.FromRgb(64, 64, 64));
+        QuestsTabButton.Background = new SolidColorBrush(Color.FromRgb(74, 158, 255));
     }
 
     private void UpdateHotkeyInfoText()

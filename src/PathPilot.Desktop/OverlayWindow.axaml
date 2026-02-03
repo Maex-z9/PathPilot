@@ -17,7 +17,7 @@
     <Border Background="#CC1E1E1E"
             CornerRadius="8"
             Padding="15">
-        <Grid RowDefinitions="Auto,*,Auto">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
             <!-- Header - Draggable -->
             <Border Name="DragHandle"
                     Grid.Row="0"
@@ -47,79 +47,142 @@
                 </Grid>
             </Border>
 
-            <!-- Gems List -->
-            <ScrollViewer Grid.Row="1"
+            <!-- Tab Buttons -->
+            <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="0,0,0,10">
+                <Button Name="GemsTabButton"
+                        Grid.Column="0"
+                        Content="Gems"
+                        Click="GemsTabButton_Click"
+                        Background="#4a9eff"
+                        Foreground="White"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Padding="8,6"
+                        Margin="0,0,5,0"
+                        CornerRadius="4"/>
+                <Button Name="QuestsTabButton"
+                        Grid.Column="1"
+                        Content="Quests"
+                        Click="QuestsTabButton_Click"
+                        Background="#404040"
+                        Foreground="White"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Padding="8,6"
+                        Margin="5,0,0,0"
+                        CornerRadius="4"/>
+            </Grid>
+
+            <!-- Content Area -->
+            <ScrollViewer Grid.Row="2"
                           VerticalScrollBarVisibility="Auto"
                           MaxHeight="500">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="GEMS"
-                               FontSize="11"
-                               FontWeight="SemiBold"
-                               Foreground="#666"
-                               Margin="0,0,0,5"/>
+                <Grid>
+                    <!-- Gems Panel -->
+                    <StackPanel Name="GemsPanel" Spacing="10" IsVisible="True">
+                        <TextBlock Text="SKILL GEMS"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="#666"
+                                   Margin="0,0,0,5"/>
 
-                    <ItemsControl Name="GemsListBox">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="models:GemLinkGroup">
-                                <Border Background="#33333333"
-                                        CornerRadius="5"
-                                        Padding="10"
-                                        Margin="0,0,0,8">
-                                    <StackPanel Spacing="4">
-                                        <!-- Link Group Header with Main Skill -->
-                                        <TextBlock FontSize="12"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="#4aff9d"
-                                                   Margin="0,0,0,4">
-                                            <Run Text="{Binding Key}"/>
-                                        </TextBlock>
+                        <ItemsControl Name="GemsListBox">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="models:GemLinkGroup">
+                                    <Border Background="#33333333"
+                                            CornerRadius="5"
+                                            Padding="10"
+                                            Margin="0,0,0,8">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#4aff9d"
+                                                       Margin="0,0,0,4">
+                                                <Run Text="{Binding Key}"/>
+                                            </TextBlock>
+                                            <ItemsControl ItemsSource="{Binding Value}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate DataType="models:Gem">
+                                                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
+                                                            <Border Grid.Column="0"
+                                                                    Width="8" Height="8"
+                                                                    CornerRadius="4"
+                                                                    Margin="0,0,8,0"
+                                                                    VerticalAlignment="Center">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="{Binding Color, Converter={StaticResource GemColorConverter}}"/>
+                                                                </Border.Background>
+                                                            </Border>
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding Name}"
+                                                                       FontSize="11"
+                                                                       Foreground="{Binding IsSupport, Converter={StaticResource OverlaySupportColorConverter}}"
+                                                                       VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Grid.Column="2"
+                                                                       FontSize="10"
+                                                                       Foreground="#888"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="5,0,0,0">
+                                                                <Run Text="{Binding Level}"/>/<Run Text="{Binding Quality}"/>
+                                                            </TextBlock>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
 
-                                        <!-- Gems in this group -->
-                                        <ItemsControl ItemsSource="{Binding Value}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate DataType="models:Gem">
-                                                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
-                                                        <!-- Color Dot -->
-                                                        <Border Grid.Column="0"
-                                                                Width="8" Height="8"
-                                                                CornerRadius="4"
-                                                                Margin="0,0,8,0"
-                                                                VerticalAlignment="Center">
-                                                            <Border.Background>
-                                                                <SolidColorBrush Color="{Binding Color, Converter={StaticResource GemColorConverter}}"/>
-                                                            </Border.Background>
-                                                        </Border>
+                    <!-- Quests Panel -->
+                    <StackPanel Name="QuestsPanel" Spacing="8" IsVisible="False">
+                        <TextBlock Text="QUEST TRACKER"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="#666"
+                                   Margin="0,0,0,5"/>
 
-                                                        <!-- Gem Name -->
-                                                        <TextBlock Grid.Column="1"
-                                                                   Text="{Binding Name}"
-                                                                   FontSize="11"
-                                                                   Foreground="{Binding IsSupport, Converter={StaticResource OverlaySupportColorConverter}}"
-                                                                   VerticalAlignment="Center"
-                                                                   TextTrimming="CharacterEllipsis"/>
-
-                                                        <!-- Level/Quality -->
-                                                        <TextBlock Grid.Column="2"
-                                                                   FontSize="10"
-                                                                   Foreground="#888"
-                                                                   VerticalAlignment="Center"
-                                                                   Margin="5,0,0,0">
-                                                            <Run Text="{Binding Level}"/>/<Run Text="{Binding Quality}"/>
-                                                        </TextBlock>
-                                                    </Grid>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
+                        <ItemsControl Name="QuestsListBox">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="models:Quest">
+                                    <Border Background="#33333333"
+                                            CornerRadius="4"
+                                            Padding="8"
+                                            Margin="0,0,0,4">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsCompleted}"
+                                                      Margin="0,0,8,0"
+                                                      VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="12"
+                                                           Foreground="White"
+                                                           TextDecorations="{Binding IsCompleted, Converter={StaticResource CompletedTextDecorationConverter}}"/>
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <TextBlock FontSize="10" Foreground="#888">
+                                                        <Run Text="Act "/>
+                                                        <Run Text="{Binding Act}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding Location}"
+                                                               FontSize="10"
+                                                               Foreground="#4aff9d"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Grid>
             </ScrollViewer>
 
             <!-- Footer - Hotkey Info -->
-            <Border Grid.Row="2"
+            <Border Grid.Row="3"
                     Background="#22ffffff"
                     CornerRadius="4"
                     Padding="8,5"

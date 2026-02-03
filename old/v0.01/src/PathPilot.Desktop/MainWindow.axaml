@@ -1,0 +1,192 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:models="clr-namespace:PathPilot.Core.Models;assembly=PathPilot.Core"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="PathPilot.Desktop.MainWindow"
+        Title="PathPilot - Path of Exile Build Guide"
+        Width="1200" Height="800"
+        Background="#1e1e1e">
+
+    <Grid RowDefinitions="Auto,*">
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2d2d2d" Padding="20,15">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
+                    <TextBlock Text="📊" FontSize="24" VerticalAlignment="Center"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="PathPilot" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Name="BuildTitleText" Text="Unnamed Build" FontSize="12" Foreground="#888"/>
+                    </StackPanel>
+                </StackPanel>
+                
+                <Button Grid.Column="2"
+                        Name="ImportButton"
+                        Content="Import Build"
+                        Click="ImportButton_Click"
+                        Background="#4a9eff"
+                        Foreground="White"
+                        Padding="15,8"
+                        CornerRadius="5"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" Padding="20">
+            <StackPanel Spacing="20">
+                <!-- Loadout Selectors -->
+                <Grid ColumnDefinitions="*,20,*">
+                    <StackPanel Grid.Column="0" Spacing="8">
+                        <TextBlock Text="Skill Set:" Foreground="#aaa" FontSize="14"/>
+                        <ComboBox Name="SkillSetSelector"
+                                  SelectionChanged="SkillSetSelector_SelectionChanged"
+                                  MinWidth="250"/>
+                    </StackPanel>
+                    
+                    <StackPanel Grid.Column="2" Spacing="8">
+                        <TextBlock Text="Item Set:" Foreground="#aaa" FontSize="14"/>
+                        <ComboBox Name="ItemSetSelector"
+                                  SelectionChanged="ItemSetSelector_SelectionChanged"
+                                  MinWidth="250"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid ColumnDefinitions="2*,20,*">
+                    <!-- Left Column: Gems -->
+                    <Border Grid.Column="0" Background="#252525" CornerRadius="8">
+                        <StackPanel Spacing="15" Margin="25">
+                            <TextBlock Text="💎 Skill Gems" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            
+                            <!-- Grouped by Link Groups -->
+                            <ItemsControl Name="LinkGroupsListBox">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="models:GemLinkGroup">
+                                        <Border Background="#1a1a1a" 
+                                                CornerRadius="8" 
+                                                Margin="0,0,0,15"
+                                                Padding="15">
+                                            <StackPanel Spacing="10">
+                                                <!-- Link Group Header -->
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <Border Grid.Column="0"
+                                                            Background="#2a2a2a"
+                                                            CornerRadius="4"
+                                                            Padding="8,4"
+                                                            Margin="0,0,10,0">
+                                                        <TextBlock FontSize="11" 
+                                                                   Foreground="#aaa"
+                                                                   FontWeight="SemiBold">
+                                                            <Run Text="🔗 Link Group "/>
+                                                            <Run Text="{Binding Key}"/>
+                                                        </TextBlock>
+                                                    </Border>
+                                                    
+                                                    <TextBlock Grid.Column="2"
+                                                               FontSize="11"
+                                                               Foreground="#666"
+                                                               VerticalAlignment="Center">
+                                                        <Run Text="{Binding Value.Count}"/>
+                                                        <Run Text=" gems"/>
+                                                    </TextBlock>
+                                                </Grid>
+                                                
+                                                <!-- Gems in this Link Group -->
+                                                <ItemsControl ItemsSource="{Binding Value}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate DataType="models:Gem">
+                                                            <Border Background="#252525" 
+                                                                    CornerRadius="5" 
+                                                                    Margin="0,0,0,8"
+                                                                    Padding="12">
+                                                                <StackPanel Spacing="6">
+                                                                    <!-- Gem Name with Color Indicator -->
+                                                                    <Grid ColumnDefinitions="Auto,Auto,*">
+                                                                        <!-- Color Dot -->
+                                                                        <Border Grid.Column="0" 
+                                                                                Width="10" Height="10" 
+                                                                                CornerRadius="5"
+                                                                                Margin="0,0,10,0"
+                                                                                VerticalAlignment="Center">
+                                                                            <Border.Background>
+                                                                                <SolidColorBrush Color="{Binding Color, Converter={StaticResource GemColorConverter}}" />
+                                                                            </Border.Background>
+                                                                        </Border>
+                                                                        
+                                                                        <!-- Indent for Support Gems -->
+                                                                        <TextBlock Grid.Column="1"
+                                                                                   Text="  └ "
+                                                                                   FontSize="14"
+                                                                                   Foreground="#666"
+                                                                                   VerticalAlignment="Center"
+                                                                                   IsVisible="{Binding IsSupport}"/>
+                                                                        
+                                                                        <!-- Gem Name -->
+                                                                        <TextBlock Grid.Column="2" 
+                                                                                   FontSize="15" 
+                                                                                   FontWeight="{Binding IsSupport, Converter={StaticResource SupportFontWeightConverter}}"
+                                                                                   Foreground="White"
+                                                                                   VerticalAlignment="Center">
+                                                                            <Run Text="{Binding Name}"/>
+                                                                        </TextBlock>
+                                                                    </Grid>
+                                                                    
+                                                                    <!-- Stats -->
+                                                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="20,0,0,0">
+                                                                        <TextBlock FontSize="12" Foreground="#4a9eff">
+                                                                            <Run Text="Lv "/>
+                                                                            <Run Text="{Binding Level}"/>
+                                                                        </TextBlock>
+                                                                        <TextBlock FontSize="12" Foreground="#4aff9d">
+                                                                            <Run Text="Q "/>
+                                                                            <Run Text="{Binding Quality}"/>
+                                                                            <Run Text="%"/>
+                                                                        </TextBlock>
+                                                                        <TextBlock Text="{Binding Type}" 
+                                                                                   FontSize="11" 
+                                                                                   Foreground="#888"/>
+                                                                    </StackPanel>
+                                                                    
+                                                                    <!-- Acquisition Info -->
+                                                                    <TextBlock FontSize="11" 
+                                                                               Foreground="#ff9d4a" 
+                                                                               Margin="20,0,0,0">
+                                                                        <Run Text="📍 "/>
+                                                                        <Run Text="{Binding AcquisitionInfo}"/>
+                                                                    </TextBlock>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Right Column: Items -->
+                    <Border Grid.Column="2" Background="#252525" CornerRadius="8">
+                        <StackPanel Spacing="15" Margin="25">
+                            <TextBlock Text="⚔️ Items" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            <ItemsControl Name="ItemsListBox">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="models:Item">
+                                        <Border Background="#1a1a1a" CornerRadius="5" Margin="0,0,0,10">
+                                            <StackPanel Spacing="5" Margin="15">
+                                                <TextBlock Text="{Binding Slot}" FontSize="11" Foreground="#888"/>
+                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="White"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
