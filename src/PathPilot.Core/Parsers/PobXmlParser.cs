@@ -230,28 +230,47 @@ namespace PathPilot.Core.Parsers
             if (itemsElement == null)
                 return;
 
-            // Get all item set elements (different gear loadouts)
+            // Step 1: Parse ALL items into a dictionary by ID
+            var itemsById = new Dictionary<string, Item>();
+            foreach (var itemElement in itemsElement.Elements("Item"))
+            {
+                var id = itemElement.Attribute("id")?.Value;
+                if (!string.IsNullOrEmpty(id))
+                {
+                    var item = ParseItem(itemElement);
+                    if (item != null)
+                    {
+                        itemsById[id] = item;
+                    }
+                }
+            }
+            Console.WriteLine($"Parsed {itemsById.Count} items from Items element");
+
+            // Step 2: Parse ItemSets and resolve slot references
             var itemSetElements = itemsElement.Elements("ItemSet");
-            
+
             if (!itemSetElements.Any())
             {
-                // No explicit item sets, parse as single default set
-                var defaultItemSet = ParseSingleItemSet(itemsElement, "Default");
+                // No explicit item sets, create default from all items
+                var defaultItemSet = new ItemSet
+                {
+                    Title = "Default",
+                    Items = itemsById.Values.ToList()
+                };
                 build.ItemSets.Add(defaultItemSet);
             }
             else
             {
-                // Parse each item set
                 foreach (var itemSetElement in itemSetElements)
                 {
-                    var itemSet = ParseSingleItemSet(itemSetElement, 
+                    var itemSet = ParseSingleItemSet(itemSetElement, itemsById,
                         itemSetElement.Attribute("title")?.Value ?? "Unnamed Gear Set");
                     build.ItemSets.Add(itemSet);
                 }
             }
         }
 
-        private ItemSet ParseSingleItemSet(XElement itemSetElement, string title)
+        private ItemSet ParseSingleItemSet(XElement itemSetElement, Dictionary<string, Item> itemsById, string title)
         {
             var itemSet = new ItemSet
             {
@@ -259,24 +278,34 @@ namespace PathPilot.Core.Parsers
                 Items = new List<Item>()
             };
 
-            // Parse each Item element
-            var itemElements = itemSetElement.Elements("Item");
-
-            foreach (var itemElement in itemElements)
+            // Parse Slot elements that reference items by ID
+            foreach (var slotElement in itemSetElement.Elements("Slot"))
             {
-                var item = ParseItem(itemElement);
-                if (item != null)
+                var slotName = slotElement.Attribute("name")?.Value;
+                var itemId = slotElement.Attribute("itemId")?.Value;
+
+                if (!string.IsNullOrEmpty(itemId) && itemsById.TryGetValue(itemId, out var item))
                 {
-                    itemSet.Items.Add(item);
+                    // Clone the item and set the slot from the Slot element
+                    var slotItem = new Item
+                    {
+                        Name = item.Name,
+                        Slot = NormalizeSlotName(slotName ?? item.Slot),
+                        Rarity = item.Rarity,
+                        BaseType = item.BaseType,
+                        RawText = item.RawText
+                    };
+                    itemSet.Items.Add(slotItem);
                 }
             }
 
+            Console.WriteLine($"ItemSet '{title}': {itemSet.Items.Count} items loaded");
             return itemSet;
         }
 
         private Item ParseItem(XElement itemElement)
         {
-            var slot = itemElement.Attribute("id")?.Value ?? "Unknown";
+            var id = itemElement.Attribute("id")?.Value ?? "Unknown";
             var itemText = itemElement.Value?.Trim();
 
             if (string.IsNullOrWhiteSpace(itemText))
@@ -291,27 +320,107 @@ namespace PathPilot.Core.Parsers
             if (lines.Count == 0)
                 return null;
 
-            // First line is usually the item name
-            var itemName = lines[0];
-            
-            // Try to find rarity line
+            // PoB format:
+            // Line 0: Rarity: RARE/UNIQUE/MAGIC/NORMAL
+            // Line 1: Item Name (for rare/unique) or Base Type (for normal/magic)
+            // Line 2: Base Type (for rare/unique)
+            // Then: properties like "Sockets:", "LevelReq:", "Implicits:"
+            // Then: mods
+
             var rarity = "Normal";
-            var rarityLine = lines.FirstOrDefault(l => l.StartsWith("Rarity:", StringComparison.OrdinalIgnoreCase));
-            if (rarityLine != null)
+            var itemName = "";
+            var baseType = "";
+            var mods = new List<string>();
+            int modsStartIndex = 0;
+
+            // Parse rarity
+            if (lines[0].StartsWith("Rarity:", StringComparison.OrdinalIgnoreCase))
             {
-                rarity = rarityLine.Split(':')[1].Trim();
+                rarity = lines[0].Split(':')[1].Trim().ToUpperInvariant();
+
+                if (rarity == "UNIQUE" || rarity == "RARE")
+                {
+                    // Line 1 = name, Line 2 = base type
+                    itemName = lines.Count > 1 ? lines[1] : "Unknown";
+                    baseType = lines.Count > 2 ? lines[2] : itemName;
+                    modsStartIndex = 3;
+                }
+                else
+                {
+                    // Magic/Normal: Line 1 = base type (may include prefix/suffix in name)
+                    baseType = lines.Count > 1 ? lines[1] : "Unknown";
+                    itemName = baseType;
+                    modsStartIndex = 2;
+                }
+            }
+            else
+            {
+                // No rarity line - treat first line as name
+                itemName = lines[0];
+                baseType = lines.Count > 1 ? lines[1] : itemName;
+                modsStartIndex = 2;
             }
 
-            // Try to find item base type
-            var baseType = lines.Count > 1 ? lines[1] : itemName;
+            // Parse mods - skip property lines and collect actual mods
+            bool inMods = false;
+            int implicits = 0;
+
+            for (int i = modsStartIndex; i < lines.Count; i++)
+            {
+                var line = lines[i];
+
+                // Skip known property lines
+                if (line.StartsWith("Sockets:") ||
+                    line.StartsWith("LevelReq:") ||
+                    line.StartsWith("ItemLvl:") ||
+                    line.StartsWith("Quality:") ||
+                    line.StartsWith("Armour:") ||
+                    line.StartsWith("Evasion:") ||
+                    line.StartsWith("Energy Shield:") ||
+                    line.StartsWith("Ward:") ||
+                    line.StartsWith("Chance to Block:") ||
+                    line.StartsWith("Physical Damage:") ||
+                    line.StartsWith("Critical Strike Chance:") ||
+                    line.StartsWith("Attacks per Second:") ||
+                    line.StartsWith("Weapon Range:") ||
+                    line.StartsWith("Limited to:") ||
+                    line.StartsWith("Radius:"))
+                {
+                    continue;
+                }
+
+                // Check for implicits count
+                if (line.StartsWith("Implicits:"))
+                {
+                    int.TryParse(line.Split(':')[1].Trim(), out implicits);
+                    inMods = true;
+                    continue;
+                }
+
+                // Collect mods
+                if (inMods || i >= modsStartIndex + 3)
+                {
+                    // Clean up mod text
+                    var mod = line.Replace("{crafted}", "[C]")
+                                  .Replace("{fractured}", "[F]")
+                                  .Replace("{range:", "")
+                                  .Replace("}", "");
+
+                    if (!string.IsNullOrWhiteSpace(mod) && mod.Length > 2)
+                    {
+                        mods.Add(mod);
+                    }
+                }
+            }
 
             var item = new Item
             {
                 Name = itemName,
-                Slot = NormalizeSlotName(slot),
+                Slot = id,
                 Rarity = rarity,
                 BaseType = baseType,
-                RawText = itemText
+                RawText = itemText,
+                ImportantMods = mods
             };
 
             return item;

@@ -10,5 +10,6 @@
         <converters:GemColorConverter x:Key="GemColorConverter"/>
         <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
         <converters:SupportFontWeightConverter x:Key="SupportFontWeightConverter"/>
+        <converters:RarityColorConverter x:Key="RarityColorConverter"/>
     </Application.Resources>
 </Application>
