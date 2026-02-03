@@ -76,15 +76,31 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - Uses `WebUtility.HtmlDecode()` for HTML entities (fixes apostrophe gems like "Battlemage's Cry")
 - Uses `Uri.EscapeDataString()` for URL encoding
 
-## Nächste Session
+## Nächste Session - Quest Tracker fortsetzen
 
-Frage den Benutzer welches TODO er als nächstes angehen möchte.
+### Bereits erstellt:
+- `PathPilot.Core/Models/Quest.cs` - Quest Model mit QuestReward enum
+- `PathPilot.Core/Services/QuestDataService.cs` - Alle wichtigen Quests (Act 1-10, Skill Points, Trials, Labs)
+
+### Nächste Schritte:
+1. **QuestTrackerWindow.axaml** erstellen - UI zur Anzeige der Quests
+2. Quest-Button im MainWindow Header hinzufügen
+3. Filtering nach Act, Reward-Typ (Skill Points, Trials, Labs)
+4. Checkbox zum Markieren erledigter Quests
+5. Progress-Speicherung pro Build (in Build-JSON oder separater Datei)
+6. Optional: Integration ins Overlay
+
+### Quest-Daten enthalten:
+- Alle Skill Point Quests (Act 1-10)
+- Ascendancy Trials (6 für Normal Lab, 3 für Cruel, 3 für Merciless)
+- Labyrinth-Quests (Normal, Cruel, Merciless)
+- Location, RecommendedLevel, IsOptional
 
 ## TODOs / Planned Features
 
 - [ ] **Skilltree Viewer wie pobb.in**: Interaktiver Skilltree mit Node-Auswahl, Hover-Infos, und voller Funktionalität wie auf pobb.in
 - [x] **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird (Build-Info, Gems, Items)
-- [ ] **Quest Tracker**: Zeigt an welche Quests als nächstes erledigt werden sollten (Skill Points, Trials, wichtige Items)
+- [ ] **Quest Tracker**: Zeigt an welche Quests als nächstes erledigt werden sollten (Skill Points, Trials, wichtige Items) - **IN PROGRESS**
 
 ## Language
 
