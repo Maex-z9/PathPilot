@@ -82,13 +82,26 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - `PathPilot.Core/Models/Quest.cs` - Quest Model mit QuestReward enum
 - `PathPilot.Core/Services/QuestDataService.cs` - Alle wichtigen Quests (Act 1-10, Skill Points, Trials, Labs)
 
-### Nächste Schritte:
-1. **QuestTrackerWindow.axaml** erstellen - UI zur Anzeige der Quests
-2. Quest-Button im MainWindow Header hinzufügen
-3. Filtering nach Act, Reward-Typ (Skill Points, Trials, Labs)
-4. Checkbox zum Markieren erledigter Quests
-5. Progress-Speicherung pro Build (in Build-JSON oder separater Datei)
-6. Optional: Integration ins Overlay
+### Nächste Schritte (Quest Tracker im Overlay):
+1. **OverlayWindow.axaml erweitern** - Tabs oder Toggle zwischen Gems/Quests
+2. Quest-Liste im Overlay anzeigen (kompakte Darstellung)
+3. Filtering nach Act (basierend auf Character-Level oder manuell)
+4. Checkbox zum Markieren erledigter Quests (click im Interactive-Mode)
+5. Progress-Speicherung in `~/.config/PathPilot/quest-progress.json`
+6. Nur unerledigte Quests anzeigen (oder Toggle)
+
+### UI-Konzept fürs Overlay:
+```
++------------------+
+| Build: Name      |
+| [Gems] [Quests]  |  <- Toggle Buttons
++------------------+
+| Act 2            |
+| [ ] Bandit Quest |
+|     The Forest   |
+| [x] Great White  |
++------------------+
+```
 
 ### Quest-Daten enthalten:
 - Alle Skill Point Quests (Act 1-10)
