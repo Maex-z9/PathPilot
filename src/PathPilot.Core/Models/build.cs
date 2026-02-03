@@ -1,83 +1,125 @@
-namespace PathPilot.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
 
-/// <summary>
-/// Represents a complete Path of Building character build
-/// </summary>
-public class Build
+namespace PathPilot.Core.Models
 {
-    public string Name { get; set; } = string.Empty;
-    public string ClassName { get; set; } = string.Empty;
-    public string Ascendancy { get; set; } = string.Empty;
-    public int Level { get; set; }
-    public string MainHand { get; set; } = string.Empty;
-    public string OffHand { get; set; } = string.Empty;
-    
-    public SkillTree? SkillTree { get; set; }
-    
     /// <summary>
-    /// All available skill sets (different gem configurations)
+    /// Represents a complete Path of Building build
     /// </summary>
-    public List<SkillSet> SkillSets { get; set; } = new();
-    
-    /// <summary>
-    /// Index of the currently active skill set
-    /// </summary>
-    public int ActiveSkillSetIndex { get; set; }
-    
-    /// <summary>
-    /// All available item sets (different gear loadouts)
-    /// </summary>
-    public List<ItemSet> ItemSets { get; set; } = new();
-    
-    /// <summary>
-    /// Index of the currently active item set
-    /// </summary>
-    public int ActiveItemSetIndex { get; set; }
-    
-    /// <summary>
-    /// Convenience property: Currently active skill set
-    /// </summary>
-    public SkillSet? ActiveSkillSet => 
-        ActiveSkillSetIndex >= 0 && ActiveSkillSetIndex < SkillSets.Count 
-            ? SkillSets[ActiveSkillSetIndex] 
-            : SkillSets.FirstOrDefault();
-    
-    /// <summary>
-    /// Convenience property: Currently active item set
-    /// </summary>
-    public ItemSet? ActiveItemSet => 
-        ActiveItemSetIndex >= 0 && ActiveItemSetIndex < ItemSets.Count 
-            ? ItemSets[ActiveItemSetIndex] 
-            : ItemSets.FirstOrDefault();
-    
-    /// <summary>
-    /// Legacy: All gems (from active skill set)
-    /// </summary>
-    public List<Gem> Gems => ActiveSkillSet?.Gems ?? new();
-    
-    /// <summary>
-    /// Legacy: All items (from active item set)
-    /// </summary>
-    public List<Item> Items => ActiveItemSet?.Items ?? new();
-    
-    public string Notes { get; set; } = string.Empty;
-    public string? PobUrl { get; set; }
-}
+    public class Build
+    {
+        /// <summary>
+        /// Build name/title
+        /// </summary>
+        public string Name { get; set; } = "Unnamed Build";
 
-/// <summary>
-/// Represents a skill set (gem configuration)
-/// </summary>
-public class SkillSet
-{
-    public string Name { get; set; } = "Default";
-    public List<Gem> Gems { get; set; } = new();
-}
+        /// <summary>
+        /// Character class (Marauder, Witch, etc.)
+        /// </summary>
+        public string ClassName { get; set; } = string.Empty;
 
-/// <summary>
-/// Represents an item set (gear loadout)
-/// </summary>
-public class ItemSet
-{
-    public string Name { get; set; } = "Default";
-    public List<Item> Items { get; set; } = new();
+        /// <summary>
+        /// Character level
+        /// </summary>
+        public int Level { get; set; } = 1;
+
+        /// <summary>
+        /// Ascendancy class (Juggernaut, Necromancer, etc.)
+        /// </summary>
+        public string Ascendancy { get; set; } = string.Empty;
+
+        /// <summary>
+        /// All skill sets (loadouts) in this build
+        /// </summary>
+        public List<SkillSet> SkillSets { get; set; } = new List<SkillSet>();
+
+        /// <summary>
+        /// All item sets (gear loadouts) in this build
+        /// </summary>
+        public List<ItemSet> ItemSets { get; set; } = new List<ItemSet>();
+
+        /// <summary>
+        /// Currently selected skill set index
+        /// </summary>
+        public int ActiveSkillSetIndex { get; set; } = 0;
+
+        /// <summary>
+        /// Currently selected item set index
+        /// </summary>
+        public int ActiveItemSetIndex { get; set; } = 0;
+
+        /// <summary>
+        /// Gets the currently active skill set
+        /// </summary>
+        public SkillSet? ActiveSkillSet
+        {
+            get
+            {
+                if (SkillSets.Count == 0)
+                    return null;
+
+                if (ActiveSkillSetIndex < 0 || ActiveSkillSetIndex >= SkillSets.Count)
+                    ActiveSkillSetIndex = 0;
+
+                return SkillSets[ActiveSkillSetIndex];
+            }
+        }
+
+        /// <summary>
+        /// Gets the currently active item set
+        /// </summary>
+        public ItemSet? ActiveItemSet
+        {
+            get
+            {
+                if (ItemSets.Count == 0)
+                    return null;
+
+                if (ActiveItemSetIndex < 0 || ActiveItemSetIndex >= ItemSets.Count)
+                    ActiveItemSetIndex = 0;
+
+                return ItemSets[ActiveItemSetIndex];
+            }
+        }
+
+        /// <summary>
+        /// Total number of gems across all skill sets
+        /// </summary>
+        public int TotalGems => SkillSets.Sum(ss => ss.TotalGems);
+
+        /// <summary>
+        /// Total number of items across all item sets
+        /// </summary>
+        public int TotalItems => ItemSets.Sum(items => items.Items.Count);
+
+        /// <summary>
+        /// Full character description
+        /// </summary>
+        public string CharacterDescription
+        {
+            get
+            {
+                var desc = $"Level {Level} {ClassName}";
+                if (!string.IsNullOrWhiteSpace(Ascendancy))
+                    desc += $" ({Ascendancy})";
+                return desc;
+            }
+        }
+
+        /// <summary>
+        /// Gets all unique gems required across all skill sets
+        /// </summary>
+        public IEnumerable<Gem> GetAllUniqueGems()
+        {
+            return SkillSets
+                .SelectMany(ss => ss.GetAllGems())
+                .GroupBy(g => g.Name)
+                .Select(group => group.First());
+        }
+
+        public override string ToString()
+        {
+            return $"{Name} - {CharacterDescription} - {SkillSets.Count} loadouts";
+        }
+    }
 }

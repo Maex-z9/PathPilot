@@ -17,7 +17,10 @@ var allGems = await scraper.ScrapeAllGemPages(gemNames);
 Console.WriteLine($"\nTotal gems with sources: {allGems.Count}");
 
 // Save to JSON
-string outputPath = "../../../src/PathPilot.Core/Data/gems-database.json";
+string outputPath = Path.Combine(
+    Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!,
+    "..", "..", "..", "..", "..", "..", "src", "PathPilot.Core", "Data", "gems-database.json");
+outputPath = Path.GetFullPath(outputPath);
 string json = JsonConvert.SerializeObject(allGems, Formatting.Indented);
 Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 File.WriteAllText(outputPath, json);
@@ -174,43 +177,49 @@ private async Task<GemData?> ScrapeGemPage(string gemName)
     }
 }
     
-    private string ParseGemColor(HtmlNode doc)
+private string ParseGemColor(HtmlNode doc)
+{
+    try
     {
-        try
+        // Method 1: Look for categories at the bottom of the page
+        var catLinks = doc.SelectNodes("//div[@id='mw-normal-catlinks']//a");
+        if (catLinks != null)
         {
-            // Find the infobox with gem stats
-            var infobox = doc.SelectSingleNode("//table[contains(@class, 'infobox')]");
-            if (infobox == null) return "White";
-            
-            // Look for "Primary attribute" row
-            var rows = infobox.SelectNodes(".//tr");
-            if (rows == null) return "White";
-            
-            foreach (var row in rows)
+            foreach (var link in catLinks)
             {
-                var header = row.SelectSingleNode(".//th");
-                if (header == null) continue;
-                
-                string headerText = header.InnerText.Trim();
-                if (headerText.Contains("Primary attribute", StringComparison.OrdinalIgnoreCase) ||
-                    headerText.Contains("Attribute", StringComparison.OrdinalIgnoreCase))
-                {
-                    var value = row.SelectSingleNode(".//td");
-                    if (value != null)
-                    {
-                        string attrText = value.InnerText.Trim().ToLower();
-                        
-                        if (attrText.Contains("strength")) return "Red";
-                        if (attrText.Contains("dexterity")) return "Green";
-                        if (attrText.Contains("intelligence")) return "Blue";
-                    }
-                }
+                string catText = link.InnerText;
+                if (catText.Contains("Strength skill gems", StringComparison.OrdinalIgnoreCase))
+                    return "Red";
+                if (catText.Contains("Dexterity skill gems", StringComparison.OrdinalIgnoreCase))
+                    return "Green";
+                if (catText.Contains("Intelligence skill gems", StringComparison.OrdinalIgnoreCase))
+                    return "Blue";
             }
         }
-        catch { }
         
-        return "White";
+        // Method 2: Look in the progression table header for "Required Strength/Dexterity/Intelligence"
+        var tableHeaders = doc.SelectNodes("//table[contains(@class, 'skill-progression-table')]//th//abbr");
+        if (tableHeaders != null)
+        {
+            foreach (var header in tableHeaders)
+            {
+                string titleText = header.GetAttributeValue("title", "");  // FIX: Use GetAttributeValue
+                if (titleText.Contains("Required Strength", StringComparison.OrdinalIgnoreCase))
+                    return "Red";
+                if (titleText.Contains("Required Dexterity", StringComparison.OrdinalIgnoreCase))
+                    return "Green";
+                if (titleText.Contains("Required Intelligence", StringComparison.OrdinalIgnoreCase))
+                    return "Blue";
+            }
+        }
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error parsing color: {ex.Message}");
+    }
+    
+    return "White";
+}
     
     private void ParseQuestRewardTable(HtmlNode table, GemData gemData)
     {

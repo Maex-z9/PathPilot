@@ -9,47 +9,57 @@ public class Item
     /// Item name (e.g. "Rare Gloves", "Belly of the Beast")
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
-    /// Item slot
+    /// Item slot (e.g. "Main Hand", "Body Armour")
     /// </summary>
-    public ItemSlot Slot { get; set; }
-    
+    public string Slot { get; set; } = string.Empty;
+
     /// <summary>
-    /// Item rarity
+    /// Item rarity (Normal, Magic, Rare, Unique)
     /// </summary>
-    public ItemRarity Rarity { get; set; }
-    
+    public string Rarity { get; set; } = "Normal";
+
+    /// <summary>
+    /// Base type of the item
+    /// </summary>
+    public string BaseType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Raw item text from PoB
+    /// </summary>
+    public string RawText { get; set; } = string.Empty;
+
     /// <summary>
     /// Required sockets (list of colors)
     /// </summary>
     public List<SocketColor> RequiredSockets { get; set; } = new();
-    
+
     /// <summary>
     /// Required number of links (e.g. 6 for 6-link)
     /// </summary>
     public int RequiredLinks { get; set; }
-    
+
     /// <summary>
     /// Which gems are socketed in this item
     /// </summary>
     public List<string> SocketedGems { get; set; } = new();
-    
+
     /// <summary>
     /// Important item properties/mods to look for
     /// </summary>
     public List<string> ImportantMods { get; set; } = new();
-    
+
     /// <summary>
     /// Item level requirement
     /// </summary>
     public int RequiredLevel { get; set; }
-    
+
     /// <summary>
     /// Is this item required for the build to function?
     /// </summary>
     public bool IsRequired { get; set; }
-    
+
     /// <summary>
     /// Notes about the item (e.g. "Can use any rare chest until you get this")
     /// </summary>

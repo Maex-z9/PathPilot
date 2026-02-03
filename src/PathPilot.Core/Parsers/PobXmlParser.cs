@@ -1,449 +1,377 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Linq;
 using PathPilot.Core.Models;
+using PathPilot.Core.Services;
 
-namespace PathPilot.Core.Parsers;
-
-/// <summary>
-/// Parses Path of Building XML files into Build objects
-/// </summary>
-public class PobXmlParser
+namespace PathPilot.Core.Parsers
 {
-    /// <summary>
-    /// Parses XML string to Build object
-    /// </summary>
-    public Build Parse(string xml)
+    public class PobXmlParser
     {
-        if (string.IsNullOrWhiteSpace(xml))
+        private readonly GemDataService _gemDataService;
+
+        public PobXmlParser(GemDataService gemDataService)
         {
-            throw new ArgumentException("XML cannot be empty", nameof(xml));
+            _gemDataService = gemDataService ?? throw new ArgumentNullException(nameof(gemDataService));
         }
 
-        try
+        /// <summary>
+        /// Parses the decompressed PoB XML into a Build object with proper link groups
+        /// </summary>
+        public Build Parse(string xmlContent)
         {
-            var doc = XDocument.Parse(xml);
-            var root = doc.Root ?? throw new InvalidOperationException("XML has no root element");
+            if (string.IsNullOrWhiteSpace(xmlContent))
+                throw new ArgumentException("XML content cannot be empty", nameof(xmlContent));
 
             var build = new Build();
+            
+            try
+            {
+                var doc = XDocument.Parse(xmlContent);
+                var root = doc.Root;
 
-            // Parse Build metadata
-            ParseBuildMetadata(root, build);
+                if (root == null)
+                    throw new InvalidOperationException("XML root element not found");
 
-            // Parse Skill Tree
-            build.SkillTree = ParseSkillTree(root);
+                // Parse build metadata
+                ParseBuildMetadata(root, build);
 
-            // Parse Skill Sets
-            build.SkillSets = ParseSkillSets(root, out int activeSkillSetIndex);
-            build.ActiveSkillSetIndex = activeSkillSetIndex;
+                // Parse all skill sets (loadouts)
+                ParseSkillSets(root, build);
 
-            // Parse Item Sets
-            build.ItemSets = ParseItemSets(root, out int activeItemSetIndex);
-            build.ActiveItemSetIndex = activeItemSetIndex;
+                // Parse items for each item set
+                ParseItemSets(root, build);
+
+                // Parse skill tree (TODO: future implementation)
+                // ParseSkillTree(root, build);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to parse PoB XML: {ex.Message}", ex);
+            }
 
             return build;
         }
-        catch (Exception ex) when (ex is not ArgumentException)
+
+        private void ParseBuildMetadata(XElement root, Build build)
         {
-            throw new InvalidOperationException("Failed to parse PoB XML. The file may be corrupted or in an unsupported format.", ex);
-        }
-    }
-
-    /// <summary>
-    /// Parses build metadata (name, class, level, etc.)
-    /// </summary>
-    private void ParseBuildMetadata(XElement root, Build build)
-    {
-        var buildElement = root.Element("Build");
-        if (buildElement != null)
-        {
-            build.Level = int.Parse(buildElement.Attribute("level")?.Value ?? "1");
-            build.ClassName = buildElement.Attribute("className")?.Value ?? "Unknown";
-            build.Ascendancy = buildElement.Attribute("ascendClassName")?.Value ?? "";
-            build.Name = buildElement.Attribute("name")?.Value ?? "Unnamed Build";
-            build.MainHand = buildElement.Attribute("mainSocketGroup")?.Value ?? "";
-        }
-
-        // Parse notes
-        var notesElement = root.Element("Notes");
-        if (notesElement != null)
-        {
-            build.Notes = notesElement.Value ?? "";
-        }
-    }
-
-    /// <summary>
-    /// Parses the passive skill tree
-    /// </summary>
-    private SkillTree ParseSkillTree(XElement root)
-    {
-        var tree = new SkillTree();
-
-        var treeElement = root.Element("Tree");
-        if (treeElement == null)
-        {
-            return tree;
-        }
-
-        // Parse spec (allocated nodes)
-        var specElement = treeElement.Element("Spec");
-        if (specElement != null)
-        {
-            tree.ClassName = specElement.Attribute("className")?.Value ?? "";
-            tree.Ascendancy = specElement.Attribute("ascendClassName")?.Value ?? "";
-
-            // Parse allocated nodes
-            var nodesAttr = specElement.Attribute("nodes");
-            if (nodesAttr != null)
+            var buildElement = root.Element("Build");
+            if (buildElement != null)
             {
-                var nodeIds = nodesAttr.Value.Split(',', StringSplitOptions.RemoveEmptyEntries);
-                foreach (var nodeIdStr in nodeIds)
-                {
-                    if (int.TryParse(nodeIdStr.Trim(), out int nodeId))
-                    {
-                        tree.AllocatedNodes.Add(nodeId);
-                    }
-                }
+                build.Name = buildElement.Attribute("level")?.Value ?? "Unnamed Build";
+                build.ClassName = buildElement.Attribute("className")?.Value ?? "Unknown";
+                build.Level = int.TryParse(buildElement.Attribute("level")?.Value, out var level) ? level : 1;
+                build.Ascendancy = buildElement.Attribute("ascendClassName")?.Value ?? string.Empty;
             }
+        }
 
-            tree.PointsUsed = tree.AllocatedNodes.Count;
+        private void ParseSkillSets(XElement root, Build build)
+        {
+            var skillsElement = root.Element("Skills");
+            if (skillsElement == null)
+                return;
 
-            // Parse masteries
-            var masteriesElement = specElement.Element("Masteries");
-            if (masteriesElement != null)
+            // Get all skill set elements (different loadouts)
+            var skillSetElements = skillsElement.Elements("SkillSet");
+            
+            if (!skillSetElements.Any())
             {
-                foreach (var masteryElement in masteriesElement.Elements("Mastery"))
+                // No explicit skill sets, parse as single default set
+                var defaultSkillSet = ParseSingleSkillSet(skillsElement, "Default");
+                build.SkillSets.Add(defaultSkillSet);
+            }
+            else
+            {
+                // Parse each skill set (loadout)
+                foreach (var skillSetElement in skillSetElements)
                 {
-                    int nodeId = int.Parse(masteryElement.Attribute("node")?.Value ?? "0");
-                    int effectId = int.Parse(masteryElement.Attribute("effect")?.Value ?? "0");
-                    
-                    if (nodeId > 0 && effectId > 0)
-                    {
-                        tree.MasterySelections[nodeId] = effectId;
-                    }
+                    var skillSet = ParseSingleSkillSet(skillSetElement, 
+                        skillSetElement.Attribute("title")?.Value ?? "Unnamed Loadout");
+                    build.SkillSets.Add(skillSet);
                 }
             }
         }
 
-        return tree;
-    }
-
-    /// <summary>
-    /// Parses all skill sets from the build
-    /// </summary>
-    private List<SkillSet> ParseSkillSets(XElement root, out int activeIndex)
-    {
-        var skillSets = new List<SkillSet>();
-        activeIndex = 0;
-
-        var skillsElement = root.Element("Skills");
-        if (skillsElement == null)
-        {
-            return skillSets;
-        }
-
-        // Get active skill set index
-        var activeSetAttr = skillsElement.Attribute("activeSkillSet");
-        if (activeSetAttr != null && int.TryParse(activeSetAttr.Value, out int activeIdx))
-        {
-            activeIndex = activeIdx - 1; // PoB uses 1-based indexing
-        }
-
-        int setIndex = 0;
-        foreach (var skillSetElement in skillsElement.Elements("SkillSet"))
+        private SkillSet ParseSingleSkillSet(XElement skillSetElement, string title)
         {
             var skillSet = new SkillSet
             {
-                Name = skillSetElement.Attribute("title")?.Value ?? $"Skill Set {setIndex + 1}"
+                Title = title,
+                LinkGroups = new List<GemLinkGroup>()
             };
 
-            foreach (var skillElement in skillSetElement.Elements("Skill"))
+            // Parse each Skill element (these are the actual link groups)
+            var skillElements = skillSetElement.Elements("Skill");
+            int linkGroupIndex = 1;
+
+            foreach (var skillElement in skillElements)
             {
-                string? label = skillElement.Attribute("label")?.Value;
-                bool enabled = skillElement.Attribute("enabled")?.Value != "false";
-
-                if (!enabled)
+                var linkGroup = ParseLinkGroup(skillElement, linkGroupIndex);
+                if (linkGroup.Gems.Any())
                 {
-                    continue; // Skip disabled skills
-                }
-
-                foreach (var gemElement in skillElement.Elements("Gem"))
-                {
-                    var gem = ParseGem(gemElement, label);
-                    if (gem != null)
-                    {
-                        skillSet.Gems.Add(gem);
-                    }
+                    skillSet.LinkGroups.Add(linkGroup);
+                    linkGroupIndex++;
                 }
             }
 
-            skillSets.Add(skillSet);
-            setIndex++;
+            return skillSet;
         }
 
-        // Ensure at least one skill set exists
-        if (skillSets.Count == 0)
+        private GemLinkGroup ParseLinkGroup(XElement skillElement, int groupIndex)
         {
-            skillSets.Add(new SkillSet { Name = "Default" });
+            var slot = skillElement.Attribute("slot")?.Value ?? $"Group {groupIndex}";
+            var isEnabled = ParseBoolAttribute(skillElement.Attribute("enabled"), true);
+            var mainActiveSkillIndex = int.TryParse(skillElement.Attribute("mainActiveSkill")?.Value, out var idx) 
+                ? idx : 1;
+
+            var linkGroup = new GemLinkGroup
+            {
+                Key = slot,
+                Gems = new List<Gem>(),
+                IsEnabled = isEnabled,
+                SocketGroup = slot
+            };
+
+            // Parse all gems in this link group
+            var gemElements = skillElement.Elements("Gem");
+            int gemIndexInGroup = 1;
+
+            foreach (var gemElement in gemElements)
+            {
+                var gem = ParseGem(gemElement, slot, gemIndexInGroup, mainActiveSkillIndex);
+                if (gem != null)
+                {
+                    linkGroup.Gems.Add(gem);
+                    gemIndexInGroup++;
+                }
+            }
+
+            return linkGroup;
         }
 
-        return skillSets;
-    }
-
-    /// <summary>
-    /// Parses a single gem element
-    /// </summary>
-    private Gem? ParseGem(XElement gemElement, string? linkGroup)
-    {
-        string? gemName = gemElement.Attribute("nameSpec")?.Value ?? gemElement.Attribute("skillId")?.Value;
-        
-        if (string.IsNullOrWhiteSpace(gemName))
+        private Gem ParseGem(XElement gemElement, string linkGroupKey, int indexInGroup, int mainActiveSkillIndex)
         {
-            return null;
+            var gemName = gemElement.Attribute("nameSpec")?.Value 
+                ?? gemElement.Attribute("skillId")?.Value
+                ?? gemElement.Attribute("gemId")?.Value;
+
+            if (string.IsNullOrWhiteSpace(gemName))
+                return null;
+
+            // Clean up gem name (remove quality suffixes, etc.)
+            gemName = CleanGemName(gemName);
+
+            var gem = new Gem
+            {
+                Name = gemName,
+                Level = int.TryParse(gemElement.Attribute("level")?.Value, out var lvl) ? lvl : 1,
+                Quality = int.TryParse(gemElement.Attribute("quality")?.Value, out var qual) ? qual : 0,
+                IsEnabled = ParseBoolAttribute(gemElement.Attribute("enabled"), true),
+                LinkGroup = linkGroupKey,
+                IndexInGroup = indexInGroup
+            };
+
+            // Determine if this is the main active skill in the group
+            gem.IsMainActiveSkill = indexInGroup == mainActiveSkillIndex;
+
+            // Enrich gem data from database (type, color, acquisition info)
+            EnrichGemFromDatabase(gem);
+
+            return gem;
         }
 
-        var gem = new Gem
+        private void EnrichGemFromDatabase(Gem gem)
         {
-            Name = gemName,
-            Level = int.Parse(gemElement.Attribute("level")?.Value ?? "1"),
-            Quality = int.Parse(gemElement.Attribute("quality")?.Value ?? "0"),
-            LinkGroup = linkGroup ?? "Unknown",
-            IsEnabled = gemElement.Attribute("enabled")?.Value != "false"
-        };
+            var gemData = _gemDataService.GetGemInfo(gem.Name);
 
-        // Determine gem type based on name
-        gem.Type = DetermineGemType(gemName);
-        
-        // Determine socket color based on gem attributes
-        gem.Color = DetermineSocketColor(gemElement);
+            if (gemData != null)
+            {
+                // Infer type from gem name
+                gem.Type = gem.Name.Contains("Support") ? GemType.Support : GemType.Active;
 
-        return gem;
-    }
+                // Parse color string to enum
+                gem.Color = ParseSocketColor(gemData.Color);
 
-    /// <summary>
-    /// Determines gem type from name
-    /// </summary>
-    private GemType DetermineGemType(string name)
-    {
-        string lowerName = name.ToLower();
-
-        if (lowerName.Contains("support"))
-            return GemType.Support;
-        if (lowerName.Contains("aura") || lowerName.Contains("grace") || lowerName.Contains("determination"))
-            return GemType.Aura;
-        if (lowerName.Contains("curse") || lowerName.Contains("mark"))
-            return GemType.Curse;
-        if (lowerName.Contains("herald"))
-            return GemType.Herald;
-        if (lowerName.StartsWith("vaal "))
-            return GemType.Vaal;
-
-        return GemType.Active;
-    }
-
-    /// <summary>
-    /// Determines socket color from gem attributes
-    /// </summary>
-    private SocketColor DetermineSocketColor(XElement gemElement)
-    {
-        // PoB doesn't always specify color directly, we'd need to look at gem requirements
-        // For now, return a default - this can be enhanced with gem data
-        string? gemName = gemElement.Attribute("nameSpec")?.Value ?? "";
-        
-        // Simple heuristic based on common gem types
-        if (gemName.Contains("Melee") || gemName.Contains("Physical") || gemName.Contains("Life"))
-            return SocketColor.Red;
-        if (gemName.Contains("Projectile") || gemName.Contains("Attack") || gemName.Contains("Speed"))
-            return SocketColor.Green;
-        if (gemName.Contains("Spell") || gemName.Contains("Elemental") || gemName.Contains("Mana"))
-            return SocketColor.Blue;
-
-        return SocketColor.Red; // Default
-    }
-
-    /// <summary>
-    /// Parses all item sets from the build
-    /// </summary>
-    private List<ItemSet> ParseItemSets(XElement root, out int activeIndex)
-    {
-        var itemSets = new List<ItemSet>();
-        activeIndex = 0;
-
-        var itemsElement = root.Element("Items");
-        if (itemsElement == null)
-        {
-            return itemSets;
+                // Format acquisition info from sources
+                var earliestSource = gemData.Sources.OrderBy(s => s.Act).FirstOrDefault();
+                if (earliestSource != null)
+                {
+                    gem.AcquisitionInfo = $"Act {earliestSource.Act}: {earliestSource.QuestName ?? "Vendor"} ({earliestSource.VendorName})";
+                }
+                else
+                {
+                    gem.AcquisitionInfo = "Drop only";
+                }
+            }
+            else
+            {
+                // Fallback: try to infer from gem name
+                gem.Type = gem.Name.Contains("Support") ? GemType.Support : GemType.Active;
+                gem.Color = SocketColor.White;
+                gem.AcquisitionInfo = "Source unknown - gem not in database";
+            }
         }
 
-        // Get active item set index
-        var activeSetAttr = itemsElement.Attribute("activeItemSet");
-        if (activeSetAttr != null && int.TryParse(activeSetAttr.Value, out int activeIdx))
+        private SocketColor ParseSocketColor(string color)
         {
-            activeIndex = activeIdx - 1; // PoB uses 1-based indexing
+            return color?.ToLowerInvariant() switch
+            {
+                "red" => SocketColor.Red,
+                "green" => SocketColor.Green,
+                "blue" => SocketColor.Blue,
+                _ => SocketColor.White
+            };
         }
 
-        int setIndex = 0;
-        foreach (var itemSetElement in itemsElement.Elements("ItemSet"))
+        private void ParseItemSets(XElement root, Build build)
+        {
+            var itemsElement = root.Element("Items");
+            if (itemsElement == null)
+                return;
+
+            // Get all item set elements (different gear loadouts)
+            var itemSetElements = itemsElement.Elements("ItemSet");
+            
+            if (!itemSetElements.Any())
+            {
+                // No explicit item sets, parse as single default set
+                var defaultItemSet = ParseSingleItemSet(itemsElement, "Default");
+                build.ItemSets.Add(defaultItemSet);
+            }
+            else
+            {
+                // Parse each item set
+                foreach (var itemSetElement in itemSetElements)
+                {
+                    var itemSet = ParseSingleItemSet(itemSetElement, 
+                        itemSetElement.Attribute("title")?.Value ?? "Unnamed Gear Set");
+                    build.ItemSets.Add(itemSet);
+                }
+            }
+        }
+
+        private ItemSet ParseSingleItemSet(XElement itemSetElement, string title)
         {
             var itemSet = new ItemSet
             {
-                Name = itemSetElement.Attribute("title")?.Value ?? $"Item Set {setIndex + 1}"
+                Title = title,
+                Items = new List<Item>()
             };
 
-            foreach (var slotElement in itemSetElement.Elements("Slot"))
+            // Parse each Item element
+            var itemElements = itemSetElement.Elements("Item");
+
+            foreach (var itemElement in itemElements)
             {
-                string? slotName = slotElement.Attribute("name")?.Value;
-                string? itemText = slotElement.Attribute("itemId")?.Value ?? slotElement.Value;
-
-                if (string.IsNullOrWhiteSpace(itemText))
-                {
-                    continue;
-                }
-
-                var item = ParseItem(itemText, slotName);
+                var item = ParseItem(itemElement);
                 if (item != null)
                 {
                     itemSet.Items.Add(item);
                 }
             }
 
-            itemSets.Add(itemSet);
-            setIndex++;
+            return itemSet;
         }
 
-        // Ensure at least one item set exists
-        if (itemSets.Count == 0)
+        private Item ParseItem(XElement itemElement)
         {
-            itemSets.Add(new ItemSet { Name = "Default" });
-        }
+            var slot = itemElement.Attribute("id")?.Value ?? "Unknown";
+            var itemText = itemElement.Value?.Trim();
 
-        return itemSets;
-    }
+            if (string.IsNullOrWhiteSpace(itemText))
+                return null;
 
-    /// <summary>
-    /// Parses a single item
-    /// </summary>
-    private Item? ParseItem(string itemText, string? slotName)
-    {
-        if (string.IsNullOrWhiteSpace(itemText))
-        {
-            return null;
-        }
+            // Parse the item text (PoB stores items in a special text format)
+            var lines = itemText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrEmpty(l))
+                .ToList();
 
-        var item = new Item
-        {
-            Slot = ParseItemSlot(slotName ?? "Unknown")
-        };
+            if (lines.Count == 0)
+                return null;
 
-        // Parse item text (PoB item format is complex, this is simplified)
-        var lines = itemText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        
-        if (lines.Length > 0)
-        {
-            item.Name = lines[0].Trim();
-        }
-
-        // Determine rarity from name formatting (simplified)
-        if (item.Name.StartsWith("Unique:"))
-        {
-            item.Rarity = ItemRarity.Unique;
-            item.Name = item.Name.Replace("Unique:", "").Trim();
-        }
-        else if (item.Name.StartsWith("Rare:"))
-        {
-            item.Rarity = ItemRarity.Rare;
-            item.Name = item.Name.Replace("Rare:", "").Trim();
-        }
-        else
-        {
-            item.Rarity = ItemRarity.Rare; // Default assumption
-        }
-
-        // Parse sockets (look for "Sockets:" line)
-        foreach (var line in lines)
-        {
-            if (line.StartsWith("Sockets:"))
+            // First line is usually the item name
+            var itemName = lines[0];
+            
+            // Try to find rarity line
+            var rarity = "Normal";
+            var rarityLine = lines.FirstOrDefault(l => l.StartsWith("Rarity:", StringComparison.OrdinalIgnoreCase));
+            if (rarityLine != null)
             {
-                ParseSockets(line, item);
+                rarity = rarityLine.Split(':')[1].Trim();
             }
-        }
 
-        return item;
-    }
+            // Try to find item base type
+            var baseType = lines.Count > 1 ? lines[1] : itemName;
 
-    /// <summary>
-    /// Parses socket information from item text
-    /// </summary>
-    private void ParseSockets(string socketLine, Item item)
-    {
-        // Example: "Sockets: R-R-G-G-G-G"
-        string socketsText = socketLine.Replace("Sockets:", "").Trim();
-        var socketGroups = socketsText.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        int maxLinkCount = 0;
-
-        foreach (var group in socketGroups)
-        {
-            var sockets = group.Split('-', StringSplitOptions.RemoveEmptyEntries);
-            maxLinkCount = Math.Max(maxLinkCount, sockets.Length);
-
-            foreach (var socket in sockets)
+            var item = new Item
             {
-                var color = socket.Trim().ToUpper() switch
-                {
-                    "R" => SocketColor.Red,
-                    "G" => SocketColor.Green,
-                    "B" => SocketColor.Blue,
-                    "W" => SocketColor.White,
-                    _ => SocketColor.Red
-                };
+                Name = itemName,
+                Slot = NormalizeSlotName(slot),
+                Rarity = rarity,
+                BaseType = baseType,
+                RawText = itemText
+            };
 
-                item.RequiredSockets.Add(color);
-            }
+            return item;
         }
 
-        item.RequiredLinks = maxLinkCount;
-    }
-
-    /// <summary>
-    /// Maps slot name to ItemSlot enum
-    /// </summary>
-    private ItemSlot ParseItemSlot(string slotName)
-    {
-        return slotName.ToLower() switch
+        private string CleanGemName(string gemName)
         {
-            "weapon 1" or "weapon1" => ItemSlot.Weapon,
-            "weapon 2" or "weapon2" or "offhand" => ItemSlot.OffHand,
-            "helmet" or "helm" => ItemSlot.Helmet,
-            "body armour" or "bodyarmour" or "chest" => ItemSlot.BodyArmour,
-            "gloves" => ItemSlot.Gloves,
-            "boots" => ItemSlot.Boots,
-            "amulet" => ItemSlot.Amulet,
-            "ring 1" or "ring 2" or "ring" => ItemSlot.Ring,
-            "belt" => ItemSlot.Belt,
-            "flask 1" or "flask 2" or "flask 3" or "flask 4" or "flask 5" or "flask" => ItemSlot.Flask,
-            _ => ItemSlot.Jewel
-        };
-    }
+            if (string.IsNullOrWhiteSpace(gemName))
+                return gemName;
 
-    /// <summary>
-    /// Parses a PoB build from a file path
-    /// </summary>
-    public Build ParseFile(string filePath)
-    {
-        if (!File.Exists(filePath))
-        {
-            throw new FileNotFoundException($"PoB file not found: {filePath}");
+            // Remove common suffixes
+            gemName = gemName.Replace(" (Transfigured)", "")
+                .Replace(" (Awakened)", "")
+                .Replace(" (Anomalous)", "")
+                .Replace(" (Divergent)", "")
+                .Replace(" (Phantasmal)", "")
+                .Trim();
+
+            return gemName;
         }
 
-        string xml = File.ReadAllText(filePath);
-        return Parse(xml);
-    }
+        private string NormalizeSlotName(string slot)
+        {
+            if (string.IsNullOrWhiteSpace(slot))
+                return "Unknown";
 
-    /// <summary>
-    /// Parses a PoB build from a paste code
-    /// </summary>
-    public Build ParseFromPasteCode(string pasteCode)
-    {
-        string xml = PobDecoder.DecodeToXml(pasteCode);
-        return Parse(xml);
+            // Normalize common slot names
+            return slot switch
+            {
+                "Weapon1" or "Weapon 1" => "Main Hand",
+                "Weapon2" or "Weapon 2" => "Off Hand",
+                "Helm" => "Helmet",
+                "BodyArmour" or "Body Armour" => "Body Armour",
+                "Gloves" => "Gloves",
+                "Boots" => "Boots",
+                "Amulet" => "Amulet",
+                "Ring1" or "Ring 1" => "Ring 1",
+                "Ring2" or "Ring 2" => "Ring 2",
+                "Belt" => "Belt",
+                "Flask1" or "Flask 1" => "Flask 1",
+                "Flask2" or "Flask 2" => "Flask 2",
+                "Flask3" or "Flask 3" => "Flask 3",
+                "Flask4" or "Flask 4" => "Flask 4",
+                "Flask5" or "Flask 5" => "Flask 5",
+                _ => slot
+            };
+        }
+
+        private bool ParseBoolAttribute(XAttribute attribute, bool defaultValue)
+        {
+            if (attribute == null)
+                return defaultValue;
+
+            var value = attribute.Value?.ToLowerInvariant();
+            return value switch
+            {
+                "true" or "1" or "yes" => true,
+                "false" or "0" or "no" => false,
+                _ => defaultValue
+            };
+        }
     }
 }
