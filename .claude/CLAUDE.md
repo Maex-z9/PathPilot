@@ -92,6 +92,7 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 2. Filter nach Act oder nur unerledigte anzeigen
 3. Trials und Labs auch anzeigen (separate Tabs oder Abschnitte)
 4. Quest-Reward (+1 Passive, +2 Passives) anzeigen
+5. **Lab Trial Positionen hinzufügen** - Genaue Spawn-Locations für alle Trials
 
 ### Quest-Daten (22 Skill Points total, +2 für Bandits):
 - Act 1: 2 Quests (Dweller, Fairgraves)
