@@ -1,99 +1,81 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using PathPilot.Core.Models;
+using PathPilot.Core.Services;
+using PathPilot.Desktop.Controls;
 
 namespace PathPilot.Desktop;
 
 public partial class TreeViewerWindow : Window
 {
+    private readonly SkillTreeDataService _treeDataService;
+    private HashSet<int> _allocatedNodeIds = new();
     private string _treeUrl = string.Empty;
-    private string _fullUrl = string.Empty;
 
     public TreeViewerWindow()
     {
         InitializeComponent();
+        _treeDataService = new SkillTreeDataService();
     }
 
-    public TreeViewerWindow(string treeUrl, string title) : this()
+    public TreeViewerWindow(string treeUrl, string title, List<int>? allocatedNodes = null) : this()
     {
         _treeUrl = treeUrl;
         TreeTitleText.Text = title;
+        _allocatedNodeIds = allocatedNodes != null ? new HashSet<int>(allocatedNodes) : new();
 
-        // Build the full URL
-        _fullUrl = treeUrl;
-        if (!_fullUrl.StartsWith("http"))
-        {
-            _fullUrl = "https://www.pathofexile.com/passive-skill-tree/" + _fullUrl;
-        }
-
-        // Navigate to the tree URL when window loads
+        // Load tree when window opens
         Opened += OnWindowOpened;
     }
 
-    private void OnWindowOpened(object? sender, EventArgs e)
+    private async void OnWindowOpened(object? sender, EventArgs e)
     {
-        NavigateToTree();
+        await LoadTreeAsync();
     }
 
-    private void NavigateToTree()
-    {
-        if (string.IsNullOrEmpty(_fullUrl))
-            return;
-
-        try
-        {
-            TreeWebView.Address = _fullUrl;
-            Console.WriteLine($"WebView navigating to: {_fullUrl}");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error navigating WebView: {ex.Message}");
-        }
-    }
-
-    private void RefreshButton_Click(object? sender, RoutedEventArgs e)
+    private async Task LoadTreeAsync()
     {
         try
         {
-            TreeWebView.Reload();
+            var treeData = await _treeDataService.GetTreeDataAsync();
+            if (treeData == null)
+            {
+                Console.WriteLine("Failed to load tree data");
+                return;
+            }
+
+            // Calculate positions for all nodes
+            SkillTreePositionHelper.CalculateAllPositions(treeData);
+
+            // Apply offset to center tree (GGG coords can be negative)
+            // Offset by 5000 to center in 10000x10000 canvas
+            foreach (var node in treeData.Nodes.Values)
+            {
+                if (node.CalculatedX.HasValue)
+                    node.CalculatedX += 5000;
+                if (node.CalculatedY.HasValue)
+                    node.CalculatedY += 5000;
+            }
+
+            // Set data on canvas
+            TreeCanvas.TreeData = treeData;
+            TreeCanvas.AllocatedNodeIds = _allocatedNodeIds;
+
+            Console.WriteLine($"Tree loaded: {treeData.TotalNodes} nodes, {_allocatedNodeIds.Count} allocated");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reloading: {ex.Message}");
-            NavigateToTree();
+            Console.WriteLine($"Error loading tree: {ex.Message}");
         }
     }
 
-    private void OpenExternalButton_Click(object? sender, RoutedEventArgs e)
+    private async void RefreshButton_Click(object? sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(_fullUrl))
-            return;
-
-        try
-        {
-            OpenUrl(_fullUrl);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error opening URL: {ex.Message}");
-        }
-    }
-
-    private static void OpenUrl(string url)
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            Process.Start("xdg-open", url);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            Process.Start("open", url);
-        }
+        await LoadTreeAsync();
     }
 }
