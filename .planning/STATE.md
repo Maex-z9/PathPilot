@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-04)
 ## Current Position
 
 Phase: 3 of 4 (Navigation)
-Plan: 0 of TBD
-Status: Ready to plan
-Last activity: 2026-02-04 — Completed Phase 2 (Core Rendering)
+Plan: 1 of TBD
+Status: In progress
+Last activity: 2026-02-04 — Completed 03-01-PLAN.md (Zoom/Pan Navigation)
 
 Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 14.1 min
-- Total execution time: 0.94 hours
+- Total plans completed: 5
+- Average duration: 28.6 min
+- Total execution time: 2.38 hours
 
 **By Phase:**
 
@@ -29,10 +29,11 @@ Progress: [█████░░░░░] 50%
 |-------|-------|-------|----------|
 | 01-data-foundation | 2 | 3.0 min | 1.5 min |
 | 02-core-rendering | 2 | 53.0 min | 26.5 min |
+| 03-navigation | 1 | 87.0 min | 87.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (1.6m), 01-02 (1.4m), 02-01 (2.0m), 02-02 (51m)
-- Trend: 02-02 longer due to bug fixes and checkpoint verification
+- Last 5 plans: 01-02 (1.4m), 02-01 (2.0m), 02-02 (51m), 03-01 (87m)
+- Trend: 03-01 longer due to multiple hit testing fixes and coordinate transformation debugging
 
 *Updated after each plan completion*
 
@@ -61,6 +62,12 @@ Recent decisions affecting current work:
 - 02-02: Use poe-tool-dev/passive-skill-tree-json for PoE 1 data (not GGG's PoE 2 export)
 - 02-02: Lua-to-C# byte offset fix: `b:byte(7)` in Lua = `bytes[6]` in C#
 - 02-02: ZoomLevel property on canvas uses canvas.Scale() for proper SkiaSharp zoom
+- 03-01: SkiaSharp canvas.Scale() as single zoom mechanism (removed Canvas.Width/Height scaling)
+- 03-01: Pointer events (OnPointerWheelChanged/Pressed/Moved/Released) for navigation
+- 03-01: Coordinate transformation order: Translate(offset) then Scale(zoom)
+- 03-01: Fix hit testing by rendering transparent Background in SkiaSharp draw operation
+- 03-01: Zoom centered on cursor via pre/post coordinate transformation tracking
+- 03-01: Pan offset divided by ZoomLevel for consistent speed at all zoom levels
 
 ### Pending Todos
 
@@ -72,8 +79,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-04T15:37:01+01:00
-Stopped at: Completed Phase 2 - Core Rendering
+Last session: 2026-02-04T20:36:43Z
+Stopped at: Completed 03-01-PLAN.md (Zoom/Pan Navigation)
 Resume file: None
 
-**Phase 2 complete.** Native skill tree rendering verified with ~1300 nodes and allocated highlighting. Ready for Phase 3: Navigation (zoom/pan controls).
+**Plan 03-01 complete.** Mouse-wheel zoom centered on cursor, left-click drag pan, and automatic centering on allocated nodes all verified working. Phase 3 (Navigation) in progress.
