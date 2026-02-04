@@ -70,6 +70,9 @@ public class SkillTreeCanvas : Control
     private bool _isPanning = false;
     private Point _lastPointerPos;
 
+    // Hover state
+    private int? _hoveredNodeId = null;
+
     // Zoom limits
     private const float MinZoom = 0.02f;
     private const float MaxZoom = 2.0f;
@@ -141,6 +144,13 @@ public class SkillTreeCanvas : Control
         _offsetX += worldBefore.X - worldAfter.X;
         _offsetY += worldBefore.Y - worldAfter.Y;
 
+        // Clear hover state during zoom
+        if (_hoveredNodeId.HasValue)
+        {
+            _hoveredNodeId = null;
+            ToolTip.SetIsOpen(this, false);
+        }
+
         InvalidateVisual();
         e.Handled = true;
     }
@@ -166,8 +176,28 @@ public class SkillTreeCanvas : Control
     {
         base.OnPointerMoved(e);
 
-        if (_isPanning)
+        // Handle hover detection when NOT panning
+        if (!_isPanning && TreeData != null)
         {
+            var currentPos = e.GetCurrentPoint(this).Position;
+            var worldPos = ScreenToWorld(currentPos);
+            var nodeId = FindNodeAtPosition(worldPos);
+
+            if (nodeId != _hoveredNodeId)
+            {
+                _hoveredNodeId = nodeId;
+                UpdateTooltip();
+            }
+        }
+        else if (_isPanning)
+        {
+            // Clear hover state during panning
+            if (_hoveredNodeId.HasValue)
+            {
+                _hoveredNodeId = null;
+                ToolTip.SetIsOpen(this, false);
+            }
+
             var currentPos = e.GetCurrentPoint(this).Position;
             var delta = currentPos - _lastPointerPos;
 
@@ -206,6 +236,18 @@ public class SkillTreeCanvas : Control
     {
         base.OnPointerCaptureLost(e);
         _isPanning = false;
+    }
+
+    protected override void OnPointerExited(PointerEventArgs e)
+    {
+        base.OnPointerExited(e);
+
+        // Clear hover state when pointer leaves canvas
+        if (_hoveredNodeId.HasValue)
+        {
+            _hoveredNodeId = null;
+            ToolTip.SetIsOpen(this, false);
+        }
     }
 
     public void ZoomIn()
@@ -287,6 +329,55 @@ public class SkillTreeCanvas : Control
         return new SKPoint(
             (float)(screenPos.X / ZoomLevel + _offsetX),
             (float)(screenPos.Y / ZoomLevel + _offsetY));
+    }
+
+    private int? FindNodeAtPosition(SKPoint worldPos)
+    {
+        if (TreeData == null)
+            return null;
+
+        foreach (var node in TreeData.Nodes.Values)
+        {
+            if (!node.CalculatedX.HasValue || !node.CalculatedY.HasValue)
+                continue;
+
+            var nodeX = node.CalculatedX.Value;
+            var nodeY = node.CalculatedY.Value;
+
+            // Determine radius based on node type (matches DrawNodes)
+            float radius;
+            if (node.IsKeystone)
+                radius = 18f;
+            else if (node.IsNotable)
+                radius = 12f;
+            else if (node.IsJewelSocket)
+                radius = 10f;
+            else
+                radius = 6f;
+
+            // Calculate distance from world position to node center
+            var dx = worldPos.X - nodeX;
+            var dy = worldPos.Y - nodeY;
+            var distance = (float)Math.Sqrt(dx * dx + dy * dy);
+
+            if (distance <= radius)
+                return node.Id;
+        }
+
+        return null;
+    }
+
+    private void UpdateTooltip()
+    {
+        // Will be implemented in Task 2
+        if (_hoveredNodeId.HasValue && TreeData != null)
+        {
+            // Placeholder - full implementation in Task 2
+        }
+        else
+        {
+            ToolTip.SetIsOpen(this, false);
+        }
     }
 
     public void CenterOnAllocatedNodes()
