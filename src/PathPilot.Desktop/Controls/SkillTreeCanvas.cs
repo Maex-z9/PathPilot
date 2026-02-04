@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
@@ -369,15 +371,85 @@ public class SkillTreeCanvas : Control
 
     private void UpdateTooltip()
     {
-        // Will be implemented in Task 2
         if (_hoveredNodeId.HasValue && TreeData != null)
         {
-            // Placeholder - full implementation in Task 2
+            if (TreeData.Nodes.TryGetValue(_hoveredNodeId.Value, out var node))
+            {
+                var content = BuildTooltipContent(node);
+                ToolTip.SetTip(this, content);
+                ToolTip.SetIsOpen(this, true);
+                return;
+            }
         }
-        else
+
+        ToolTip.SetIsOpen(this, false);
+    }
+
+    private object BuildTooltipContent(PassiveNode node)
+    {
+        var panel = new StackPanel
         {
-            ToolTip.SetIsOpen(this, false);
+            Spacing = 4
+        };
+
+        // Node name (bold, larger font)
+        panel.Children.Add(new TextBlock
+        {
+            Text = node.Name,
+            FontWeight = FontWeight.Bold,
+            FontSize = 14
+        });
+
+        // Node stats
+        if (node.Stats != null && node.Stats.Count > 0)
+        {
+            foreach (var stat in node.Stats)
+            {
+                panel.Children.Add(new TextBlock
+                {
+                    Text = stat,
+                    FontSize = 12
+                });
+            }
         }
+
+        // Connected nodes section
+        if (node.ConnectedNodes != null && node.ConnectedNodes.Count > 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = "Connected to:",
+                FontWeight = FontWeight.SemiBold,
+                Margin = new Thickness(0, 8, 0, 0)
+            });
+
+            // Limit to first 15 connections
+            var connectionsToShow = node.ConnectedNodes.Take(15).ToList();
+            foreach (var connectedId in connectionsToShow)
+            {
+                if (TreeData.Nodes.TryGetValue(connectedId, out var connectedNode))
+                {
+                    panel.Children.Add(new TextBlock
+                    {
+                        Text = $"• {connectedNode.Name}",
+                        FontSize = 11
+                    });
+                }
+            }
+
+            // Show overflow indicator if more than 15 connections
+            if (node.ConnectedNodes.Count > 15)
+            {
+                var remaining = node.ConnectedNodes.Count - 15;
+                panel.Children.Add(new TextBlock
+                {
+                    Text = $"... and {remaining} more",
+                    FontSize = 11
+                });
+            }
+        }
+
+        return panel;
     }
 
     public void CenterOnAllocatedNodes()
