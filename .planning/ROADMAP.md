@@ -56,10 +56,10 @@ Plans:
   1. User can zoom in/out using mouse wheel
   2. User can drag to pan the view across the entire tree
   3. Tree view starts centered on allocated nodes (or start point if no allocated nodes)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — Implement zoom/pan controls and initial centering
 
 ### Phase 4: Interaction
 **Goal**: User can hover over nodes to see detailed information
@@ -82,5 +82,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete | 2026-02-04 |
 | 2. Core Rendering | 2/2 | Complete | 2026-02-04 |
-| 3. Navigation | 0/? | Not started | - |
+| 3. Navigation | 0/1 | In Progress | - |
 | 4. Interaction | 0/? | Not started | - |
