@@ -67,7 +67,10 @@
 
         <!-- Native Tree Canvas -->
         <Border Grid.Row="1" Background="#0a0a0a" ClipToBounds="True">
-            <local:SkillTreeCanvas Name="TreeCanvas" Background="Transparent" />
+            <local:SkillTreeCanvas Name="TreeCanvas"
+                                   Background="Transparent"
+                                   HorizontalAlignment="Stretch"
+                                   VerticalAlignment="Stretch" />
         </Border>
     </Grid>
 </Window>

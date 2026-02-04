@@ -74,6 +74,9 @@ public class SkillTreeCanvas : Control
     private const float MinZoom = 0.02f;
     private const float MaxZoom = 2.0f;
 
+    // Debug flag to only log bounds once
+    private bool _boundsLogged = false;
+
     static SkillTreeCanvas()
     {
         // Trigger redraw when properties change
@@ -83,6 +86,19 @@ public class SkillTreeCanvas : Control
     public override void Render(DrawingContext context)
     {
         base.Render(context);
+
+        // Log bounds once on first render to debug
+        if (!_boundsLogged && Bounds.Width > 0 && Bounds.Height > 0)
+        {
+            Console.WriteLine($"[SkillTreeCanvas] Initial Render: Bounds={Bounds}, Background={Background}, IsHitTestVisible={IsHitTestVisible}");
+            _boundsLogged = true;
+        }
+
+        // Render background to make control hit-testable for pointer events
+        if (Background != null)
+        {
+            context.FillRectangle(Background, new Rect(0, 0, Bounds.Width, Bounds.Height));
+        }
 
         // Return early if no tree data
         if (TreeData == null)
@@ -133,12 +149,16 @@ public class SkillTreeCanvas : Control
     {
         base.OnPointerPressed(e);
 
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        var currentPoint = e.GetCurrentPoint(this);
+        Console.WriteLine($"[SkillTreeCanvas] OnPointerPressed: Position={currentPoint.Position}, LeftButton={currentPoint.Properties.IsLeftButtonPressed}, Bounds={Bounds}");
+
+        if (currentPoint.Properties.IsLeftButtonPressed)
         {
             _isPanning = true;
-            _lastPointerPos = e.GetCurrentPoint(this).Position;
+            _lastPointerPos = currentPoint.Position;
             e.Pointer.Capture(this);
             e.Handled = true;
+            Console.WriteLine($"[SkillTreeCanvas] Started panning, captured pointer");
         }
     }
 
@@ -151,11 +171,15 @@ public class SkillTreeCanvas : Control
             var currentPos = e.GetCurrentPoint(this).Position;
             var delta = currentPos - _lastPointerPos;
 
+            Console.WriteLine($"[SkillTreeCanvas] OnPointerMoved (panning): Delta={delta}, CurrentPos={currentPos}, LastPos={_lastPointerPos}");
+
             // Update offsets to pan in same direction as drag
             // Since render uses: Translate(-offsetX * zoom, -offsetY * zoom)
             // We need to move offset in opposite direction of drag
             _offsetX -= (float)(delta.X / ZoomLevel);
             _offsetY -= (float)(delta.Y / ZoomLevel);
+
+            Console.WriteLine($"[SkillTreeCanvas] Updated offsets: X={_offsetX}, Y={_offsetY}");
 
             _lastPointerPos = currentPos;
             InvalidateVisual();
@@ -167,11 +191,14 @@ public class SkillTreeCanvas : Control
     {
         base.OnPointerReleased(e);
 
+        Console.WriteLine($"[SkillTreeCanvas] OnPointerReleased: _isPanning={_isPanning}");
+
         if (_isPanning)
         {
             _isPanning = false;
             e.Pointer.Capture(null);
             e.Handled = true;
+            Console.WriteLine($"[SkillTreeCanvas] Stopped panning, released pointer capture");
         }
     }
 
