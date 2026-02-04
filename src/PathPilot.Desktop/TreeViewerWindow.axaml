@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:wv="clr-namespace:WebViewControl;assembly=WebViewControl.Avalonia"
+        xmlns:local="clr-namespace:PathPilot.Desktop.Controls"
         x:Class="PathPilot.Desktop.TreeViewerWindow"
         Title="Passive Skill Tree"
         Width="1200" Height="900"
@@ -22,16 +22,9 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
                     <Button Name="RefreshButton"
-                            Content="Refresh"
+                            Content="Reload Tree"
                             Click="RefreshButton_Click"
                             Background="#404040"
-                            Foreground="White"
-                            Padding="12,6"
-                            CornerRadius="5"/>
-                    <Button Name="OpenExternalButton"
-                            Content="Open in Browser"
-                            Click="OpenExternalButton_Click"
-                            Background="#4a9eff"
                             Foreground="White"
                             Padding="12,6"
                             CornerRadius="5"/>
@@ -39,9 +32,14 @@
             </Grid>
         </Border>
 
-        <!-- WebView -->
-        <Border Grid.Row="1" Margin="0">
-            <wv:WebView Name="TreeWebView" />
+        <!-- Native Tree Canvas -->
+        <Border Grid.Row="1" Background="#0a0a0a" ClipToBounds="True">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
+                <local:SkillTreeCanvas Name="TreeCanvas"
+                                       Width="10000"
+                                       Height="10000" />
+            </ScrollViewer>
         </Border>
     </Grid>
 </Window>
