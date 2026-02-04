@@ -68,10 +68,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Hovering over a node displays tooltip with node name
   2. Tooltip shows which nodes are connected to the hovered node
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — Implement hover detection and tooltip display
 
 ## Progress
 
@@ -83,4 +83,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Data Foundation | 2/2 | Complete | 2026-02-04 |
 | 2. Core Rendering | 2/2 | Complete | 2026-02-04 |
 | 3. Navigation | 1/1 | Complete | 2026-02-04 |
-| 4. Interaction | 0/? | Not started | - |
+| 4. Interaction | 0/1 | Not started | - |
