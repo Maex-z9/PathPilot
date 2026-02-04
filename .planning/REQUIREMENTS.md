@@ -20,9 +20,9 @@
 
 ### Navigation
 
-- [ ] **NAV-01**: Benutzer kann per Mausrad zoomen
-- [ ] **NAV-02**: Benutzer kann per Drag die Ansicht verschieben (Pan)
-- [ ] **NAV-03**: Tree startet zentriert auf allocated Nodes oder Startpunkt
+- [x] **NAV-01**: Benutzer kann per Mausrad zoomen
+- [x] **NAV-02**: Benutzer kann per Drag die Ansicht verschieben (Pan)
+- [x] **NAV-03**: Tree startet zentriert auf allocated Nodes oder Startpunkt
 
 ### Interaction
 
@@ -66,9 +66,9 @@
 | REND-02 | Phase 2 | Complete |
 | REND-03 | Phase 2 | Complete |
 | REND-04 | Phase 2 | Complete |
-| NAV-01 | Phase 3 | Pending |
-| NAV-02 | Phase 3 | Pending |
-| NAV-03 | Phase 3 | Pending |
+| NAV-01 | Phase 3 | Complete |
+| NAV-02 | Phase 3 | Complete |
+| NAV-03 | Phase 3 | Complete |
 | INT-01 | Phase 4 | Pending |
 | INT-02 | Phase 4 | Pending |
 
@@ -79,4 +79,4 @@
 
 ---
 *Requirements defined: 2026-02-04*
-*Last updated: 2026-02-04 after Phase 2 completion*
+*Last updated: 2026-02-04 after Phase 3 completion*

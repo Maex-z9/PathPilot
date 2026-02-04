@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Load and parse GGG Skill Tree JSON
 - [x] **Phase 2: Core Rendering** - Render all nodes and connections in Avalonia Canvas
-- [ ] **Phase 3: Navigation** - Implement zoom and pan controls
+- [x] **Phase 3: Navigation** - Implement zoom and pan controls
 - [ ] **Phase 4: Interaction** - Add hover tooltips and node info
 
 ## Phase Details
@@ -59,7 +59,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 03-01-PLAN.md — Implement zoom/pan controls and initial centering
+- [x] 03-01-PLAN.md — Implement zoom/pan controls and initial centering
 
 ### Phase 4: Interaction
 **Goal**: User can hover over nodes to see detailed information
@@ -82,5 +82,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete | 2026-02-04 |
 | 2. Core Rendering | 2/2 | Complete | 2026-02-04 |
-| 3. Navigation | 0/1 | In Progress | - |
+| 3. Navigation | 1/1 | Complete | 2026-02-04 |
 | 4. Interaction | 0/? | Not started | - |
