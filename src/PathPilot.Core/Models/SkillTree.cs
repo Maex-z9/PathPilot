@@ -107,6 +107,12 @@ public class PassiveNode
     public bool IsNotable { get; set; }
     public bool IsJewelSocket { get; set; }
     public bool IsMastery { get; set; }
+
+    // Position data for tree rendering
+    public int? Group { get; set; }
+    public int? Orbit { get; set; }
+    public int? OrbitIndex { get; set; }
+    public string? AscendancyName { get; set; }
 }
 
 /// <summary>
