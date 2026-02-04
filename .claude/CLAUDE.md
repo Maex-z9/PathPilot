@@ -14,7 +14,8 @@ PathPilot/
 │   │   └── Data/                # Gem database (gems-database.json)
 │   └── PathPilot.Desktop/       # Avalonia desktop app
 │       ├── MainWindow.axaml     # Main UI (gems, items, loadout selector)
-│       ├── TreeViewerWindow.axaml # WebView for skill tree display
+│       ├── TreeViewerWindow.axaml # Native SkiaSharp skill tree display
+│       ├── Controls/            # Custom controls (SkillTreeCanvas)
 │       ├── OverlayWindow.axaml  # Ingame overlay (transparent, topmost)
 │       ├── SettingsWindow.axaml # Settings dialog (hotkeys, position)
 │       ├── Converters/          # Value converters (RarityColor, GemColor, etc.)
@@ -135,7 +136,8 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 ## TODOs / Planned Features
 
 - [x] **Skilltree Viewer - Basic Rendering**: Native SkiaSharp Rendering mit Nodes, Connections, Allocated Nodes (gold)
-- [ ] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, Node-Auswahl, Search
+- [ ] **Skilltree Viewer - Navigation**: Mausrad-Zoom, Drag-Pan, Start zentriert auf allocated Nodes — **NEXT UP**
+- [ ] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, verbundene Nodes anzeigen
 - [x] **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird (Build-Info, Gems, Items)
 - [ ] **Quest Tracker**: Zeigt an welche Quests als nächstes erledigt werden sollten (Skill Points, Trials, wichtige Items) - **IN PROGRESS**
 
