@@ -136,8 +136,8 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 ## TODOs / Planned Features
 
 - [x] **Skilltree Viewer - Basic Rendering**: Native SkiaSharp Rendering mit Nodes, Connections, Allocated Nodes (gold)
-- [ ] **Skilltree Viewer - Navigation**: Mausrad-Zoom, Drag-Pan, Start zentriert auf allocated Nodes — **NEXT UP**
-- [ ] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, verbundene Nodes anzeigen
+- [x] **Skilltree Viewer - Navigation**: Mausrad-Zoom, Drag-Pan, Start zentriert auf allocated Nodes
+- [ ] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, verbundene Nodes anzeigen — **NEXT UP**
 - [x] **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird (Build-Info, Gems, Items)
 - [ ] **Quest Tracker**: Zeigt an welche Quests als nächstes erledigt werden sollten (Skill Points, Trials, wichtige Items) - **IN PROGRESS**
 
@@ -151,6 +151,8 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 ### SkiaSharp Rendering
 - **Zoom**: Nicht RenderTransform verwenden - das skaliert nur visuell, nicht die Koordinaten. Stattdessen `canvas.Scale()` im SkiaSharp Render verwenden
 - **ICustomDrawOperation.Equals**: Muss `false` returnen sonst cached Avalonia das Rendering
+- **Hit Testing für Pointer Events**: Custom Controls müssen Background RENDERN um Pointer Events zu empfangen. `Background="Transparent"` Property allein reicht nicht - muss in Render() mit `context.FillRectangle(Background, ...)` gezeichnet werden
+- **Transformation Order**: Für Zoom+Pan: erst `Translate(-offset * zoom)`, dann `Scale(zoom)`. Reihenfolge ist kritisch!
 
 ## Language
 
