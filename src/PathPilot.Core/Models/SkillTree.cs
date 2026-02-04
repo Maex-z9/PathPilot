@@ -113,6 +113,16 @@ public class PassiveNode
     public int? Orbit { get; set; }
     public int? OrbitIndex { get; set; }
     public string? AscendancyName { get; set; }
+
+    /// <summary>
+    /// Calculated X position (set during rendering)
+    /// </summary>
+    public float? CalculatedX { get; set; }
+
+    /// <summary>
+    /// Calculated Y position (set during rendering)
+    /// </summary>
+    public float? CalculatedY { get; set; }
 }
 
 /// <summary>
@@ -128,4 +138,63 @@ public enum NodeType
     AscendancyNormal,
     AscendancyNotable,
     AscendancyStart
+}
+
+/// <summary>
+/// Helper for calculating node positions from group/orbit data
+/// </summary>
+public static class SkillTreePositionHelper
+{
+    // Orbit radii from GGG data (pixels)
+    private static readonly float[] OrbitRadii = { 0, 82, 162, 335, 493 };
+
+    // Nodes per orbit
+    private static readonly int[] NodesPerOrbit = { 1, 6, 12, 12, 40 };
+
+    /// <summary>
+    /// Calculates absolute position for a node given its group position
+    /// </summary>
+    public static (float X, float Y) CalculateNodePosition(
+        PassiveNode node,
+        float groupX,
+        float groupY)
+    {
+        if (node.Orbit == null || node.OrbitIndex == null)
+            return (groupX, groupY);
+
+        var orbit = node.Orbit.Value;
+        var orbitIndex = node.OrbitIndex.Value;
+
+        if (orbit < 0 || orbit >= OrbitRadii.Length)
+            return (groupX, groupY);
+
+        var radius = OrbitRadii[orbit];
+        var nodesInOrbit = NodesPerOrbit[orbit];
+
+        // Calculate angle (radians, starting from top)
+        var angle = (2 * Math.PI * orbitIndex / nodesInOrbit) - (Math.PI / 2);
+
+        var x = groupX + (float)(radius * Math.Cos(angle));
+        var y = groupY + (float)(radius * Math.Sin(angle));
+
+        return (x, y);
+    }
+
+    /// <summary>
+    /// Calculates positions for all nodes in tree data
+    /// </summary>
+    public static void CalculateAllPositions(SkillTreeData treeData)
+    {
+        foreach (var node in treeData.Nodes.Values)
+        {
+            if (node.Group == null) continue;
+
+            if (treeData.Groups.TryGetValue(node.Group.Value, out var group))
+            {
+                var (x, y) = CalculateNodePosition(node, group.X, group.Y);
+                node.CalculatedX = x;
+                node.CalculatedY = y;
+            }
+        }
+    }
 }
