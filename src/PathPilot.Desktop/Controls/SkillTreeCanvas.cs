@@ -139,7 +139,9 @@ public class SkillTreeCanvas : Control
             var currentPos = e.GetCurrentPoint(this).Position;
             var delta = currentPos - _lastPointerPos;
 
-            // Update offsets (divide by zoom for consistent pan speed)
+            // Update offsets to pan in same direction as drag
+            // Since render uses: Translate(-offsetX * zoom, -offsetY * zoom)
+            // We need to move offset in opposite direction of drag
             _offsetX -= (float)(delta.X / ZoomLevel);
             _offsetY -= (float)(delta.Y / ZoomLevel);
 
@@ -172,13 +174,22 @@ public class SkillTreeCanvas : Control
         // Zoom toward center of viewport
         var centerX = Bounds.Width / 2;
         var centerY = Bounds.Height / 2;
-        var worldBefore = ScreenToWorld(new Point(centerX, centerY));
 
-        ZoomLevel = Math.Clamp((float)ZoomLevel * 1.15f, MinZoom, MaxZoom);
+        // Calculate world position at center BEFORE zoom change
+        var worldBeforeX = (float)(centerX / ZoomLevel + _offsetX);
+        var worldBeforeY = (float)(centerY / ZoomLevel + _offsetY);
 
-        var worldAfter = ScreenToWorld(new Point(centerX, centerY));
-        _offsetX += worldBefore.X - worldAfter.X;
-        _offsetY += worldBefore.Y - worldAfter.Y;
+        // Update zoom level
+        var newZoom = Math.Clamp((float)ZoomLevel * 1.15f, MinZoom, MaxZoom);
+        ZoomLevel = newZoom;
+
+        // Calculate world position at center AFTER zoom change
+        var worldAfterX = (float)(centerX / ZoomLevel + _offsetX);
+        var worldAfterY = (float)(centerY / ZoomLevel + _offsetY);
+
+        // Adjust offset to keep center point fixed in world space
+        _offsetX += worldBeforeX - worldAfterX;
+        _offsetY += worldBeforeY - worldAfterY;
 
         InvalidateVisual();
     }
@@ -188,13 +199,46 @@ public class SkillTreeCanvas : Control
         // Zoom from center of viewport
         var centerX = Bounds.Width / 2;
         var centerY = Bounds.Height / 2;
-        var worldBefore = ScreenToWorld(new Point(centerX, centerY));
 
-        ZoomLevel = Math.Clamp((float)ZoomLevel * 0.85f, MinZoom, MaxZoom);
+        // Calculate world position at center BEFORE zoom change
+        var worldBeforeX = (float)(centerX / ZoomLevel + _offsetX);
+        var worldBeforeY = (float)(centerY / ZoomLevel + _offsetY);
 
-        var worldAfter = ScreenToWorld(new Point(centerX, centerY));
-        _offsetX += worldBefore.X - worldAfter.X;
-        _offsetY += worldBefore.Y - worldAfter.Y;
+        // Update zoom level
+        var newZoom = Math.Clamp((float)ZoomLevel * 0.85f, MinZoom, MaxZoom);
+        ZoomLevel = newZoom;
+
+        // Calculate world position at center AFTER zoom change
+        var worldAfterX = (float)(centerX / ZoomLevel + _offsetX);
+        var worldAfterY = (float)(centerY / ZoomLevel + _offsetY);
+
+        // Adjust offset to keep center point fixed in world space
+        _offsetX += worldBeforeX - worldAfterX;
+        _offsetY += worldBeforeY - worldAfterY;
+
+        InvalidateVisual();
+    }
+
+    public void SetZoom(double targetZoom)
+    {
+        // Zoom toward center of viewport
+        var centerX = Bounds.Width / 2;
+        var centerY = Bounds.Height / 2;
+
+        // Calculate world position at center BEFORE zoom change
+        var worldBeforeX = (float)(centerX / ZoomLevel + _offsetX);
+        var worldBeforeY = (float)(centerY / ZoomLevel + _offsetY);
+
+        // Update zoom level
+        ZoomLevel = Math.Clamp(targetZoom, MinZoom, MaxZoom);
+
+        // Calculate world position at center AFTER zoom change
+        var worldAfterX = (float)(centerX / ZoomLevel + _offsetX);
+        var worldAfterY = (float)(centerY / ZoomLevel + _offsetY);
+
+        // Adjust offset to keep center point fixed in world space
+        _offsetX += worldBeforeX - worldAfterX;
+        _offsetY += worldBeforeY - worldAfterY;
 
         InvalidateVisual();
     }

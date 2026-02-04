@@ -50,9 +50,6 @@ public partial class TreeViewerWindow : Window
 
         // Load tree when window opens
         Opened += OnWindowOpened;
-
-        // Center on allocated nodes after canvas is laid out
-        TreeCanvas.AttachedToVisualTree += OnCanvasAttached;
     }
 
     private async void OnWindowOpened(object? sender, EventArgs e)
@@ -60,14 +57,6 @@ public partial class TreeViewerWindow : Window
         await LoadTreeAsync();
     }
 
-    private void OnCanvasAttached(object? sender, Avalonia.VisualTreeAttachmentEventArgs e)
-    {
-        // Center after data is loaded and canvas has valid bounds
-        if (TreeCanvas.TreeData != null && TreeCanvas.Bounds.Width > 0)
-        {
-            TreeCanvas.CenterOnAllocatedNodes();
-        }
-    }
 
     private async Task LoadTreeAsync()
     {
@@ -129,6 +118,13 @@ public partial class TreeViewerWindow : Window
             // Set initial zoom level
             TreeCanvas.ZoomLevel = _zoomLevel;
             UpdateZoomDisplay();
+
+            // Center on allocated nodes after layout completes
+            // Use Dispatcher to ensure bounds are calculated
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                TreeCanvas.CenterOnAllocatedNodes();
+            }, Avalonia.Threading.DispatcherPriority.Loaded);
         }
         catch (Exception ex)
         {
@@ -150,6 +146,12 @@ public partial class TreeViewerWindow : Window
     private void ZoomOutButton_Click(object? sender, RoutedEventArgs e)
     {
         TreeCanvas.ZoomOut();
+        UpdateZoomDisplay();
+    }
+
+    private void Zoom26Button_Click(object? sender, RoutedEventArgs e)
+    {
+        TreeCanvas.SetZoom(0.26);
         UpdateZoomDisplay();
     }
 
