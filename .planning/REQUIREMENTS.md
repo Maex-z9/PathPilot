@@ -13,10 +13,10 @@
 
 ### Rendering
 
-- [ ] **REND-01**: Skill Tree wird nativ in Avalonia Canvas gerendert
-- [ ] **REND-02**: Alle ~1300 Nodes werden mit korrekten Positionen angezeigt
-- [ ] **REND-03**: Verbindungen zwischen Nodes werden gezeichnet
-- [ ] **REND-04**: Allocated Nodes sind visuell unterscheidbar (andere Farbe/Stil)
+- [x] **REND-01**: Skill Tree wird nativ in Avalonia Canvas gerendert
+- [x] **REND-02**: Alle ~1300 Nodes werden mit korrekten Positionen angezeigt
+- [x] **REND-03**: Verbindungen zwischen Nodes werden gezeichnet
+- [x] **REND-04**: Allocated Nodes sind visuell unterscheidbar (andere Farbe/Stil)
 
 ### Navigation
 
@@ -62,10 +62,10 @@
 | DATA-01 | Phase 1 | Complete |
 | DATA-02 | Phase 1 | Complete |
 | DATA-03 | Phase 1 | Complete |
-| REND-01 | Phase 2 | Pending |
-| REND-02 | Phase 2 | Pending |
-| REND-03 | Phase 2 | Pending |
-| REND-04 | Phase 2 | Pending |
+| REND-01 | Phase 2 | Complete |
+| REND-02 | Phase 2 | Complete |
+| REND-03 | Phase 2 | Complete |
+| REND-04 | Phase 2 | Complete |
 | NAV-01 | Phase 3 | Pending |
 | NAV-02 | Phase 3 | Pending |
 | NAV-03 | Phase 3 | Pending |
@@ -79,4 +79,4 @@
 
 ---
 *Requirements defined: 2026-02-04*
-*Last updated: 2026-02-04 after Phase 1 completion*
+*Last updated: 2026-02-04 after Phase 2 completion*
