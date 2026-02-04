@@ -26,8 +26,8 @@
 
 ### Interaction
 
-- [ ] **INT-01**: Hover über Node zeigt Tooltip mit Node-Name
-- [ ] **INT-02**: Hover-Tooltip zeigt verbundene Nodes
+- [x] **INT-01**: Hover über Node zeigt Tooltip mit Node-Name
+- [x] **INT-02**: Hover-Tooltip zeigt verbundene Nodes
 
 ## v2 Requirements
 
@@ -69,8 +69,8 @@
 | NAV-01 | Phase 3 | Complete |
 | NAV-02 | Phase 3 | Complete |
 | NAV-03 | Phase 3 | Complete |
-| INT-01 | Phase 4 | Pending |
-| INT-02 | Phase 4 | Pending |
+| INT-01 | Phase 4 | Complete |
+| INT-02 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 12 total
@@ -79,4 +79,4 @@
 
 ---
 *Requirements defined: 2026-02-04*
-*Last updated: 2026-02-04 after Phase 3 completion*
+*Last updated: 2026-02-04 after Phase 4 completion — MILESTONE COMPLETE*
