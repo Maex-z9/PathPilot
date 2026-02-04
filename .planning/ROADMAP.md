@@ -25,12 +25,13 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Requirements**: DATA-01, DATA-02, DATA-03
 **Success Criteria** (what must be TRUE):
   1. App successfully fetches GGG Skill Tree JSON from official source on startup
-  2. All ~1300 nodes are parsed with positions, names, and connections
+  2. All ~3000 nodes are parsed with positions, names, and connections
   3. Allocated node IDs from imported builds correctly map to parsed tree data
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
+- [ ] 01-01-PLAN.md — Create SkillTreeDataService (fetch, cache, parse GGG JSON)
+- [ ] 01-02-PLAN.md — Create BuildTreeMapper (map allocated nodes to tree data)
 
 ### Phase 2: Core Rendering
 **Goal**: Skill Tree renders natively in Avalonia Canvas with all nodes and connections visible
