@@ -12,7 +12,7 @@ This milestone replaces the WebView-based Skill Tree Viewer with a native Avalon
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Data Foundation** - Load and parse GGG Skill Tree JSON ✓
+- [x] **Phase 1: Data Foundation** - Load and parse GGG Skill Tree JSON
 - [ ] **Phase 2: Core Rendering** - Render all nodes and connections in Avalonia Canvas
 - [ ] **Phase 3: Navigation** - Implement zoom and pan controls
 - [ ] **Phase 4: Interaction** - Add hover tooltips and node info
@@ -42,10 +42,11 @@ Plans:
   2. All ~1300 nodes render at correct positions from parsed data
   3. Connections between nodes are drawn correctly
   4. Allocated nodes are visually distinct (different color/style) from unallocated nodes
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Create SkillTreeCanvas control with ICustomDrawOperation
+- [ ] 02-02-PLAN.md — Wire Canvas to TreeViewerWindow and render tree
 
 ### Phase 3: Navigation
 **Goal**: User can zoom and pan the skill tree naturally
@@ -75,11 +76,11 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 2/2 | Complete ✓ | 2026-02-04 |
-| 2. Core Rendering | 0/? | Not started | - |
+| 1. Data Foundation | 2/2 | Complete | 2026-02-04 |
+| 2. Core Rendering | 0/2 | Ready | - |
 | 3. Navigation | 0/? | Not started | - |
 | 4. Interaction | 0/? | Not started | - |
