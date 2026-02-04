@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
@@ -50,6 +52,16 @@ public class SkillTreeCanvas : Control
         set => SetValue(ZoomLevelProperty, value);
     }
 
+    // Navigation state
+    private float _offsetX = 0f;
+    private float _offsetY = 0f;
+    private bool _isPanning = false;
+    private Point _lastPointerPos;
+
+    // Zoom limits
+    private const float MinZoom = 0.02f;
+    private const float MaxZoom = 2.0f;
+
     static SkillTreeCanvas()
     {
         // Trigger redraw when properties change
@@ -69,9 +81,129 @@ public class SkillTreeCanvas : Control
             new Rect(0, 0, Bounds.Width, Bounds.Height),
             TreeData,
             AllocatedNodeIds ?? new HashSet<int>(),
-            (float)ZoomLevel);
+            (float)ZoomLevel,
+            _offsetX,
+            _offsetY);
 
         context.Custom(operation);
+    }
+
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+
+        // Get pointer position
+        var pointerPos = e.GetCurrentPoint(this).Position;
+
+        // Convert to world coords BEFORE zoom
+        var worldBefore = ScreenToWorld(pointerPos);
+
+        // Calculate zoom factor
+        var delta = e.Delta.Y;
+        var zoomFactor = delta > 0 ? 1.1f : 0.9f;
+
+        // Update zoom level with clamping
+        var newZoom = (float)ZoomLevel * zoomFactor;
+        ZoomLevel = Math.Clamp(newZoom, MinZoom, MaxZoom);
+
+        // Convert same pointer position to world coords AFTER zoom
+        var worldAfter = ScreenToWorld(pointerPos);
+
+        // Correct offset to keep content under cursor
+        _offsetX += worldBefore.X - worldAfter.X;
+        _offsetY += worldBefore.Y - worldAfter.Y;
+
+        InvalidateVisual();
+        e.Handled = true;
+    }
+
+    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    {
+        base.OnPointerPressed(e);
+
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        {
+            _isPanning = true;
+            _lastPointerPos = e.GetCurrentPoint(this).Position;
+            e.Pointer.Capture(this);
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        base.OnPointerMoved(e);
+
+        if (_isPanning)
+        {
+            var currentPos = e.GetCurrentPoint(this).Position;
+            var delta = currentPos - _lastPointerPos;
+
+            // Update offsets (divide by zoom for consistent pan speed)
+            _offsetX -= (float)(delta.X / ZoomLevel);
+            _offsetY -= (float)(delta.Y / ZoomLevel);
+
+            _lastPointerPos = currentPos;
+            InvalidateVisual();
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnPointerReleased(PointerReleasedEventArgs e)
+    {
+        base.OnPointerReleased(e);
+
+        if (_isPanning)
+        {
+            _isPanning = false;
+            e.Pointer.Capture(null);
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        _isPanning = false;
+    }
+
+    public void ZoomIn()
+    {
+        // Zoom toward center of viewport
+        var centerX = Bounds.Width / 2;
+        var centerY = Bounds.Height / 2;
+        var worldBefore = ScreenToWorld(new Point(centerX, centerY));
+
+        ZoomLevel = Math.Clamp((float)ZoomLevel * 1.15f, MinZoom, MaxZoom);
+
+        var worldAfter = ScreenToWorld(new Point(centerX, centerY));
+        _offsetX += worldBefore.X - worldAfter.X;
+        _offsetY += worldBefore.Y - worldAfter.Y;
+
+        InvalidateVisual();
+    }
+
+    public void ZoomOut()
+    {
+        // Zoom from center of viewport
+        var centerX = Bounds.Width / 2;
+        var centerY = Bounds.Height / 2;
+        var worldBefore = ScreenToWorld(new Point(centerX, centerY));
+
+        ZoomLevel = Math.Clamp((float)ZoomLevel * 0.85f, MinZoom, MaxZoom);
+
+        var worldAfter = ScreenToWorld(new Point(centerX, centerY));
+        _offsetX += worldBefore.X - worldAfter.X;
+        _offsetY += worldBefore.Y - worldAfter.Y;
+
+        InvalidateVisual();
+    }
+
+    private SKPoint ScreenToWorld(Point screenPos)
+    {
+        return new SKPoint(
+            (float)(screenPos.X / ZoomLevel + _offsetX),
+            (float)(screenPos.Y / ZoomLevel + _offsetY));
     }
 
     /// <summary>
@@ -83,13 +215,17 @@ public class SkillTreeCanvas : Control
         private readonly SkillTreeData _treeData;
         private readonly HashSet<int> _allocatedNodeIds;
         private readonly float _zoomLevel;
+        private readonly float _offsetX;
+        private readonly float _offsetY;
 
-        public SkillTreeDrawOperation(Rect bounds, SkillTreeData treeData, HashSet<int> allocatedNodeIds, float zoomLevel)
+        public SkillTreeDrawOperation(Rect bounds, SkillTreeData treeData, HashSet<int> allocatedNodeIds, float zoomLevel, float offsetX, float offsetY)
         {
             _bounds = bounds;
             _treeData = treeData;
             _allocatedNodeIds = allocatedNodeIds;
             _zoomLevel = zoomLevel;
+            _offsetX = offsetX;
+            _offsetY = offsetY;
         }
 
         public Rect Bounds => _bounds;
@@ -118,7 +254,8 @@ public class SkillTreeCanvas : Control
 
             try
             {
-                // Apply zoom transformation
+                // Apply transformations: translate first for offset, then scale for zoom
+                canvas.Translate(-_offsetX * _zoomLevel, -_offsetY * _zoomLevel);
                 canvas.Scale(_zoomLevel, _zoomLevel);
                 RenderTree(canvas);
             }

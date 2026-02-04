@@ -114,8 +114,9 @@ public partial class TreeViewerWindow : Window
             if (notFoundIds.Any())
                 Console.WriteLine($"Not found IDs (first 5): {string.Join(", ", notFoundIds)}");
 
-            // Apply initial zoom
-            ApplyZoom();
+            // Set initial zoom level
+            TreeCanvas.ZoomLevel = _zoomLevel;
+            UpdateZoomDisplay();
         }
         catch (Exception ex)
         {
@@ -130,26 +131,18 @@ public partial class TreeViewerWindow : Window
 
     private void ZoomInButton_Click(object? sender, RoutedEventArgs e)
     {
-        _zoomLevel = Math.Min(MaxZoom, _zoomLevel + ZoomStep);
-        ApplyZoom();
+        TreeCanvas.ZoomIn();
+        UpdateZoomDisplay();
     }
 
     private void ZoomOutButton_Click(object? sender, RoutedEventArgs e)
     {
-        _zoomLevel = Math.Max(MinZoom, _zoomLevel - ZoomStep);
-        ApplyZoom();
+        TreeCanvas.ZoomOut();
+        UpdateZoomDisplay();
     }
 
-    private void ApplyZoom()
+    private void UpdateZoomDisplay()
     {
-        // Scale by adjusting canvas size and passing zoom level to the canvas for SkiaSharp rendering
-        const double baseWidth = 28000;
-        const double baseHeight = 22000;
-
-        TreeCanvas.Width = baseWidth * _zoomLevel;
-        TreeCanvas.Height = baseHeight * _zoomLevel;
-        TreeCanvas.ZoomLevel = _zoomLevel;
-
-        ZoomLevelText.Text = $"{_zoomLevel * 100:F0}%";
+        ZoomLevelText.Text = $"{TreeCanvas.ZoomLevel * 100:F0}%";
     }
 }
