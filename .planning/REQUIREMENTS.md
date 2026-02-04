@@ -7,9 +7,9 @@
 
 ### Data Loading
 
-- [ ] **DATA-01**: App lädt GGG Skill Tree JSON beim Start
-- [ ] **DATA-02**: Skill Tree Daten werden geparst (Nodes, Verbindungen, Positionen)
-- [ ] **DATA-03**: Allocated Node IDs aus Build werden mit Tree-Daten verknüpft
+- [x] **DATA-01**: App lädt GGG Skill Tree JSON beim Start
+- [x] **DATA-02**: Skill Tree Daten werden geparst (Nodes, Verbindungen, Positionen)
+- [x] **DATA-03**: Allocated Node IDs aus Build werden mit Tree-Daten verknüpft
 
 ### Rendering
 
@@ -59,9 +59,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
 | REND-01 | Phase 2 | Pending |
 | REND-02 | Phase 2 | Pending |
 | REND-03 | Phase 2 | Pending |
@@ -79,4 +79,4 @@
 
 ---
 *Requirements defined: 2026-02-04*
-*Last updated: 2026-02-04 after roadmap creation*
+*Last updated: 2026-02-04 after Phase 1 completion*
