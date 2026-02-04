@@ -4,11 +4,12 @@ using PathPilot.Core.Models;
 namespace PathPilot.Core.Services;
 
 /// <summary>
-/// Service for loading and caching GGG Skill Tree data
+/// Service for loading and caching PoE 1 Skill Tree data (from poe-tool-dev community repo)
 /// </summary>
 public class SkillTreeDataService
 {
-    private const string TREE_URL = "https://raw.githubusercontent.com/grindinggear/skilltree-export/master/data.json";
+    // PoE 1 tree data (3.25.0) - GGG's official repo only has PoE 2 data now
+    private const string TREE_URL = "https://raw.githubusercontent.com/poe-tool-dev/passive-skill-tree-json/master/3.25.0/SkillTree.json";
     private const int CACHE_DAYS = 7;
 
     private readonly HttpClient _httpClient;
@@ -26,7 +27,7 @@ public class SkillTreeDataService
         _cacheDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "PathPilot", "tree-cache");
-        _cachePath = Path.Combine(_cacheDir, "data.json");
+        _cachePath = Path.Combine(_cacheDir, "poe1-3.25.json");
     }
 
     /// <summary>
@@ -77,11 +78,11 @@ public class SkillTreeDataService
         }
 
         // Download fresh
-        Console.WriteLine("Downloading skill tree data from GGG...");
+        Console.WriteLine("Downloading PoE 1 skill tree data (3.25.0)...");
         await using var stream = await _httpClient.GetStreamAsync(TREE_URL);
         await using var fileStream = File.Create(_cachePath);
         await stream.CopyToAsync(fileStream);
-        Console.WriteLine("Skill tree data cached");
+        Console.WriteLine("PoE 1 skill tree data cached");
 
         return _cachePath;
     }

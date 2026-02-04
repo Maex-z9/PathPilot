@@ -26,6 +26,12 @@ public class SkillTreeCanvas : Control
     public static readonly StyledProperty<HashSet<int>?> AllocatedNodeIdsProperty =
         AvaloniaProperty.Register<SkillTreeCanvas, HashSet<int>?>(nameof(AllocatedNodeIds));
 
+    /// <summary>
+    /// Zoom level for rendering (1.0 = 100%)
+    /// </summary>
+    public static readonly StyledProperty<double> ZoomLevelProperty =
+        AvaloniaProperty.Register<SkillTreeCanvas, double>(nameof(ZoomLevel), 1.0);
+
     public SkillTreeData? TreeData
     {
         get => GetValue(TreeDataProperty);
@@ -38,10 +44,16 @@ public class SkillTreeCanvas : Control
         set => SetValue(AllocatedNodeIdsProperty, value);
     }
 
+    public double ZoomLevel
+    {
+        get => GetValue(ZoomLevelProperty);
+        set => SetValue(ZoomLevelProperty, value);
+    }
+
     static SkillTreeCanvas()
     {
         // Trigger redraw when properties change
-        AffectsRender<SkillTreeCanvas>(TreeDataProperty, AllocatedNodeIdsProperty);
+        AffectsRender<SkillTreeCanvas>(TreeDataProperty, AllocatedNodeIdsProperty, ZoomLevelProperty);
     }
 
     public override void Render(DrawingContext context)
@@ -56,7 +68,8 @@ public class SkillTreeCanvas : Control
         var operation = new SkillTreeDrawOperation(
             new Rect(0, 0, Bounds.Width, Bounds.Height),
             TreeData,
-            AllocatedNodeIds ?? new HashSet<int>());
+            AllocatedNodeIds ?? new HashSet<int>(),
+            (float)ZoomLevel);
 
         context.Custom(operation);
     }
@@ -69,12 +82,14 @@ public class SkillTreeCanvas : Control
         private readonly Rect _bounds;
         private readonly SkillTreeData _treeData;
         private readonly HashSet<int> _allocatedNodeIds;
+        private readonly float _zoomLevel;
 
-        public SkillTreeDrawOperation(Rect bounds, SkillTreeData treeData, HashSet<int> allocatedNodeIds)
+        public SkillTreeDrawOperation(Rect bounds, SkillTreeData treeData, HashSet<int> allocatedNodeIds, float zoomLevel)
         {
             _bounds = bounds;
             _treeData = treeData;
             _allocatedNodeIds = allocatedNodeIds;
+            _zoomLevel = zoomLevel;
         }
 
         public Rect Bounds => _bounds;
@@ -103,6 +118,8 @@ public class SkillTreeCanvas : Control
 
             try
             {
+                // Apply zoom transformation
+                canvas.Scale(_zoomLevel, _zoomLevel);
                 RenderTree(canvas);
             }
             finally

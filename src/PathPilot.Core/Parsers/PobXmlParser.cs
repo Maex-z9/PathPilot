@@ -552,14 +552,11 @@ namespace PathPilot.Core.Parsers
                 // Notes sometimes contain build-relevant info
             }
 
-            // Try to estimate points from URL length or other hints
-            // For a more accurate count, we'd need to decode the passive tree URL
+            // Decode allocated nodes from tree URL
             if (!string.IsNullOrEmpty(treeSet.TreeUrl))
             {
-                // Rough estimate: each node takes ~2 chars in the URL encoding
-                // This is a very rough approximation
-                var urlPart = treeSet.TreeUrl.Split('/').LastOrDefault() ?? "";
-                treeSet.PointsUsed = Math.Min(123, urlPart.Length / 2); // Cap at max points
+                treeSet.AllocatedNodes = TreeUrlDecoder.DecodeAllocatedNodes(treeSet.TreeUrl);
+                treeSet.PointsUsed = treeSet.AllocatedNodes.Count;
             }
 
             return treeSet;

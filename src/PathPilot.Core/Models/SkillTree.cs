@@ -145,11 +145,11 @@ public enum NodeType
 /// </summary>
 public static class SkillTreePositionHelper
 {
-    // Orbit radii from GGG data (pixels)
-    private static readonly float[] OrbitRadii = { 0, 82, 162, 335, 493 };
+    // Orbit radii from GGG constants (orbitRadii in data.json)
+    private static readonly float[] OrbitRadii = { 0, 82, 162, 335, 493, 662, 846 };
 
-    // Nodes per orbit
-    private static readonly int[] NodesPerOrbit = { 1, 6, 12, 12, 40 };
+    // Nodes per orbit from GGG constants (skillsPerOrbit in data.json)
+    private static readonly int[] NodesPerOrbit = { 1, 6, 16, 16, 40, 72, 72 };
 
     /// <summary>
     /// Calculates absolute position for a node given its group position

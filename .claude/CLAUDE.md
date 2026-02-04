@@ -59,10 +59,36 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - **GemDataService**: Loads gem database, provides acquisition info
 
 ### UI Components
-- **TreeViewerWindow**: Uses WebViewControl-Avalonia (Chromium) for embedded browser
+- **TreeViewerWindow**: Native SkiaSharp rendering (kein WebView mehr)
+- **SkillTreeCanvas**: Custom Avalonia Control mit ICustomDrawOperation für SkiaSharp
 - **Converters**: RarityColorConverter (Unique=orange, Rare=yellow, Magic=blue)
 - **OverlayWindow**: Transparent, topmost, draggable overlay
 - **SettingsWindow**: Hotkey configuration with key recording
+
+### Skill Tree Viewer (Native Rendering)
+- **SkillTreeCanvas** (`Controls/SkillTreeCanvas.cs`): Custom Control mit SkiaSharp rendering
+- **SkillTreeDataService**: Lädt PoE 1 Tree Data von `poe-tool-dev/passive-skill-tree-json` (Version 3.25.0)
+- **TreeUrlDecoder**: Decodiert Tree URLs zu Node IDs
+- **Cache**: `~/.config/PathPilot/tree-cache/poe1-3.25.json`
+
+#### Tree URL Decoding (Version 6 Format)
+- Bytes 0-3: Version (big endian)
+- Byte 4: Class ID
+- Byte 5: Ascendancy ID
+- Byte 6: Node Count (WICHTIG: Lua ist 1-indexed, also `b:byte(7)` = C# `bytes[6]`)
+- Byte 7+: Node IDs (2 bytes pro Node, big endian)
+
+#### Position Calculation
+- GGG Tree Bounds: X von -13902 bis +12430, Y von -10689 bis +10023
+- Offset anwenden: +14000 X, +11000 Y (shift in positive Koordinaten)
+- Orbit Radii: `{ 0, 82, 162, 335, 493, 662, 846 }`
+- Nodes Per Orbit: `{ 1, 6, 16, 16, 40, 72, 72 }`
+
+#### Rendering
+- Connections: Batched in single SKPath für Performance
+- Nodes: Gold (200,150,50) für allocated, Dark Gray (60,60,60) für unallocated
+- Node Sizes: Keystone=18f, Notable=12f, JewelSocket=10f, Normal=6f
+- Zoom: Via `canvas.Scale()` in SkiaSharp, nicht RenderTransform
 
 ### Overlay System (Windows)
 - **HotkeyService**: Global keyboard hook via `SetWindowsHookEx(WH_KEYBOARD_LL)`
@@ -108,9 +134,21 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 
 ## TODOs / Planned Features
 
-- [ ] **Skilltree Viewer wie pobb.in**: Interaktiver Skilltree mit Node-Auswahl, Hover-Infos, und voller Funktionalität wie auf pobb.in
+- [x] **Skilltree Viewer - Basic Rendering**: Native SkiaSharp Rendering mit Nodes, Connections, Allocated Nodes (gold)
+- [ ] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, Node-Auswahl, Search
 - [x] **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird (Build-Info, Gems, Items)
 - [ ] **Quest Tracker**: Zeigt an welche Quests als nächstes erledigt werden sollten (Skill Points, Trials, wichtige Items) - **IN PROGRESS**
+
+## Bekannte Probleme / Gotchas
+
+### Tree URL Decoding
+- **Lua vs C# Indexing**: PoB Lua Code ist 1-indexed, C# ist 0-indexed. `b:byte(7)` in Lua = `bytes[6]` in C#
+- **Gespeicherte Builds**: Alte Builds haben falsch decodierte Node IDs. TreeViewerWindow decodiert jetzt direkt aus URL statt gespeicherte Nodes zu verwenden
+- **PoE 1 vs PoE 2**: GGG's `skilltree-export` Repo enthält nur PoE 2 Daten. Für PoE 1 nutze `poe-tool-dev/passive-skill-tree-json`
+
+### SkiaSharp Rendering
+- **Zoom**: Nicht RenderTransform verwenden - das skaliert nur visuell, nicht die Koordinaten. Stattdessen `canvas.Scale()` im SkiaSharp Render verwenden
+- **ICustomDrawOperation.Equals**: Muss `false` returnen sonst cached Avalonia das Rendering
 
 ## Language
 

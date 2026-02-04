@@ -21,6 +21,30 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Name="ZoomOutButton"
+                            Content="−"
+                            Click="ZoomOutButton_Click"
+                            Background="#404040"
+                            Foreground="White"
+                            Padding="12,6"
+                            FontSize="18"
+                            FontWeight="Bold"
+                            CornerRadius="5"/>
+                    <TextBlock Name="ZoomLevelText"
+                               Text="100%"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               Width="50"
+                               TextAlignment="Center"/>
+                    <Button Name="ZoomInButton"
+                            Content="+"
+                            Click="ZoomInButton_Click"
+                            Background="#404040"
+                            Foreground="White"
+                            Padding="12,6"
+                            FontSize="18"
+                            FontWeight="Bold"
+                            CornerRadius="5"/>
                     <Button Name="RefreshButton"
                             Content="Reload Tree"
                             Click="RefreshButton_Click"
@@ -37,8 +61,8 @@
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto">
                 <local:SkillTreeCanvas Name="TreeCanvas"
-                                       Width="10000"
-                                       Height="10000" />
+                                       Width="28000"
+                                       Height="22000" />
             </ScrollViewer>
         </Border>
     </Grid>
