@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-04)
 ## Current Position
 
 Phase: 2 of 4 (Core Rendering)
-Plan: 1 of TBD
+Plan: 2 of TBD
 Status: In progress
-Last activity: 2026-02-04 — Completed 02-01-PLAN.md (SkillTreeCanvas)
+Last activity: 2026-02-04 — Completed 02-02-PLAN.md (TreeViewerWindow Integration)
 
-Progress: [███░░░░░░░] 30%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 1.7 min
-- Total execution time: 0.08 hours
+- Total plans completed: 4
+- Average duration: 14.1 min
+- Total execution time: 0.94 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-data-foundation | 2 | 3.0 min | 1.5 min |
-| 02-core-rendering | 1 | 2.0 min | 2.0 min |
+| 02-core-rendering | 2 | 53.0 min | 26.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (1.6m), 01-02 (1.4m), 02-01 (2.0m)
-- Trend: Stable velocity (~1.7m per plan)
+- Last 5 plans: 01-01 (1.6m), 01-02 (1.4m), 02-01 (2.0m), 02-02 (51m)
+- Trend: 02-02 longer due to bug fixes and checkpoint verification
 
 *Updated after each plan completion*
 
@@ -57,6 +57,10 @@ Recent decisions affecting current work:
 - 02-01: Connection deduplication with HashSet to avoid drawing bidirectional edges twice
 - 02-01: Node sizes by type (Keystone 18f, Notable 12f, JewelSocket 10f, Normal 6f)
 - 02-01: Allocated nodes gold (200,150,50), unallocated dark gray (60,60,60)
+- 02-02: Decode tree URL directly instead of relying on cached AllocatedNodes
+- 02-02: Use poe-tool-dev/passive-skill-tree-json for PoE 1 data (not GGG's PoE 2 export)
+- 02-02: Lua-to-C# byte offset fix: `b:byte(7)` in Lua = `bytes[6]` in C#
+- 02-02: ZoomLevel property on canvas uses canvas.Scale() for proper SkiaSharp zoom
 
 ### Pending Todos
 
@@ -68,8 +72,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-04T13:42:55Z
-Stopped at: Completed 02-01-PLAN.md (SkillTreeCanvas)
+Last session: 2026-02-04T15:37:01+01:00
+Stopped at: Completed 02-02-PLAN.md (TreeViewerWindow Integration)
 Resume file: None
 
-**Phase 2 in progress.** Core rendering foundation (SkillTreeCanvas control) established. Ready for viewport navigation and pan/zoom integration.
+**Phase 2 in progress.** Native skill tree rendering functional with ~1300 nodes and allocated highlighting. Ready for viewport navigation (zoom/pan controls).
