@@ -41,7 +41,7 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - **Unified loadout selector**: Changes SkillSet, ItemSet, and TreeSet together
 - **Gem display**: Colors, levels, quality, acquisition info (quest/vendor)
 - **Item display**: Rarity colors, mod highlighting, tooltips with full details
-- **Skill tree viewer**: Embedded WebView (Chromium) to display passive tree in-app
+- **Skill tree viewer**: Native SkiaSharp rendering with zoom, pan, and hover tooltips
 - **Ingame Overlay**: Transparent overlay showing gems, works over PoE (Windows)
 
 ## Technical Notes
@@ -137,7 +137,7 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 
 - [x] **Skilltree Viewer - Basic Rendering**: Native SkiaSharp Rendering mit Nodes, Connections, Allocated Nodes (gold)
 - [x] **Skilltree Viewer - Navigation**: Mausrad-Zoom, Drag-Pan, Start zentriert auf allocated Nodes
-- [ ] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, verbundene Nodes anzeigen — **NEXT UP**
+- [x] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, verbundene Nodes anzeigen
 - [x] **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird (Build-Info, Gems, Items)
 - [ ] **Quest Tracker**: Zeigt an welche Quests als nächstes erledigt werden sollten (Skill Points, Trials, wichtige Items) - **IN PROGRESS**
 
