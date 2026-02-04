@@ -612,6 +612,10 @@ public class SkillTreeCanvas : Control
                 if (!node.CalculatedX.HasValue || !node.CalculatedY.HasValue)
                     continue;
 
+                // Skip connections from ascendancy nodes (eliminates long lines from center to edges)
+                if (node.IsAscendancy)
+                    continue;
+
                 var startX = node.CalculatedX.Value;
                 var startY = node.CalculatedY.Value;
 
@@ -630,6 +634,10 @@ public class SkillTreeCanvas : Control
                     if (_treeData.Nodes.TryGetValue(connectedId, out var connectedNode))
                     {
                         if (!connectedNode.CalculatedX.HasValue || !connectedNode.CalculatedY.HasValue)
+                            continue;
+
+                        // Skip connections to ascendancy nodes
+                        if (connectedNode.IsAscendancy)
                             continue;
 
                         // Add line to batched path
