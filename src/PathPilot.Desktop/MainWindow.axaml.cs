@@ -273,7 +273,7 @@ public partial class MainWindow : Window
         try
         {
             var title = $"Skill Tree - {activeTreeSet.Title}";
-            var treeWindow = new TreeViewerWindow(activeTreeSet.TreeUrl, title);
+            var treeWindow = new TreeViewerWindow(activeTreeSet.TreeUrl, title, activeTreeSet.AllocatedNodes);
             await treeWindow.ShowDialog(this);
         }
         catch (Exception ex)
