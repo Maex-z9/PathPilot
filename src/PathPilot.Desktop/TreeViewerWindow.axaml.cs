@@ -50,11 +50,23 @@ public partial class TreeViewerWindow : Window
 
         // Load tree when window opens
         Opened += OnWindowOpened;
+
+        // Center on allocated nodes after canvas is laid out
+        TreeCanvas.AttachedToVisualTree += OnCanvasAttached;
     }
 
     private async void OnWindowOpened(object? sender, EventArgs e)
     {
         await LoadTreeAsync();
+    }
+
+    private void OnCanvasAttached(object? sender, Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        // Center after data is loaded and canvas has valid bounds
+        if (TreeCanvas.TreeData != null && TreeCanvas.Bounds.Width > 0)
+        {
+            TreeCanvas.CenterOnAllocatedNodes();
+        }
     }
 
     private async Task LoadTreeAsync()

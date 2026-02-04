@@ -206,6 +206,76 @@ public class SkillTreeCanvas : Control
             (float)(screenPos.Y / ZoomLevel + _offsetY));
     }
 
+    public void CenterOnAllocatedNodes()
+    {
+        // Check if we have allocated nodes and tree data
+        if (AllocatedNodeIds == null || AllocatedNodeIds.Count == 0 || TreeData == null)
+        {
+            CenterOnStartNode();
+            return;
+        }
+
+        // Calculate bounding box of allocated nodes
+        float? minX = null, maxX = null, minY = null, maxY = null;
+
+        foreach (var nodeId in AllocatedNodeIds)
+        {
+            if (TreeData.Nodes.TryGetValue(nodeId, out var node))
+            {
+                if (node.CalculatedX.HasValue && node.CalculatedY.HasValue)
+                {
+                    var x = node.CalculatedX.Value;
+                    var y = node.CalculatedY.Value;
+
+                    minX = minX.HasValue ? Math.Min(minX.Value, x) : x;
+                    maxX = maxX.HasValue ? Math.Max(maxX.Value, x) : x;
+                    minY = minY.HasValue ? Math.Min(minY.Value, y) : y;
+                    maxY = maxY.HasValue ? Math.Max(maxY.Value, y) : y;
+                }
+            }
+        }
+
+        // If no valid nodes found, fall back to start node
+        if (!minX.HasValue || !maxX.HasValue || !minY.HasValue || !maxY.HasValue)
+        {
+            CenterOnStartNode();
+            return;
+        }
+
+        // Calculate center of allocated nodes
+        var centerX = (minX.Value + maxX.Value) / 2f;
+        var centerY = (minY.Value + maxY.Value) / 2f;
+
+        // Set initial zoom to show allocated nodes clearly
+        ZoomLevel = 0.08f;
+
+        // Center on allocated nodes (only if bounds are ready)
+        if (Bounds.Width > 0 && Bounds.Height > 0)
+        {
+            _offsetX = centerX - (float)(Bounds.Width / 2 / ZoomLevel);
+            _offsetY = centerY - (float)(Bounds.Height / 2 / ZoomLevel);
+            InvalidateVisual();
+        }
+    }
+
+    private void CenterOnStartNode()
+    {
+        // Center on tree origin (approximately 14000, 11000 after GGG offset applied)
+        const float treeCenterX = 14000f;
+        const float treeCenterY = 11000f;
+
+        // Set default zoom
+        ZoomLevel = 0.08f;
+
+        // Center on tree origin (only if bounds are ready)
+        if (Bounds.Width > 0 && Bounds.Height > 0)
+        {
+            _offsetX = treeCenterX - (float)(Bounds.Width / 2 / ZoomLevel);
+            _offsetY = treeCenterY - (float)(Bounds.Height / 2 / ZoomLevel);
+            InvalidateVisual();
+        }
+    }
+
     /// <summary>
     /// Custom draw operation that renders directly to SkiaSharp canvas
     /// </summary>
