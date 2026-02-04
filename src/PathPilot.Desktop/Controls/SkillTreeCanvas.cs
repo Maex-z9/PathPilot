@@ -34,6 +34,12 @@ public class SkillTreeCanvas : Control
     public static readonly StyledProperty<double> ZoomLevelProperty =
         AvaloniaProperty.Register<SkillTreeCanvas, double>(nameof(ZoomLevel), 1.0);
 
+    /// <summary>
+    /// Background brush for the control (enables pointer event reception)
+    /// </summary>
+    public static readonly StyledProperty<IBrush?> BackgroundProperty =
+        AvaloniaProperty.Register<SkillTreeCanvas, IBrush?>(nameof(Background));
+
     public SkillTreeData? TreeData
     {
         get => GetValue(TreeDataProperty);
@@ -52,6 +58,12 @@ public class SkillTreeCanvas : Control
         set => SetValue(ZoomLevelProperty, value);
     }
 
+    public IBrush? Background
+    {
+        get => GetValue(BackgroundProperty);
+        set => SetValue(BackgroundProperty, value);
+    }
+
     // Navigation state
     private float _offsetX = 0f;
     private float _offsetY = 0f;
@@ -65,7 +77,7 @@ public class SkillTreeCanvas : Control
     static SkillTreeCanvas()
     {
         // Trigger redraw when properties change
-        AffectsRender<SkillTreeCanvas>(TreeDataProperty, AllocatedNodeIdsProperty, ZoomLevelProperty);
+        AffectsRender<SkillTreeCanvas>(TreeDataProperty, AllocatedNodeIdsProperty, ZoomLevelProperty, BackgroundProperty);
     }
 
     public override void Render(DrawingContext context)
