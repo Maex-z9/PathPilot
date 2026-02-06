@@ -10,7 +10,7 @@ PathPilot/
 │   ├── PathPilot.Core/          # Core library
 │   │   ├── Models/              # Data models (Build, Gem, Item, SkillSet, ItemSet, SkillTreeSet)
 │   │   ├── Parsers/             # PoB import parsing (PobXmlParser, PobCodeDecoder, PobUrlImporter)
-│   │   ├── Services/            # BuildStorage (save/load), GemDataService
+│   │   ├── Services/            # BuildStorage (save/load), GemDataService, GemIconService
 │   │   └── Data/                # Gem database (gems-database.json)
 │   └── PathPilot.Desktop/       # Avalonia desktop app
 │       ├── MainWindow.axaml     # Main UI (gems, items, loadout selector)
@@ -39,7 +39,7 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - **Import builds**: From Path of Building paste code or pobb.in URLs
 - **Save/Load builds**: Stored locally in `~/.config/PathPilot/Builds/` as JSON
 - **Unified loadout selector**: Changes SkillSet, ItemSet, and TreeSet together
-- **Gem display**: Colors, levels, quality, acquisition info (quest/vendor)
+- **Gem display**: Real PoE Wiki icons (24x24), colors, levels, quality, acquisition info (quest/vendor)
 - **Item display**: Rarity colors, mod highlighting, tooltips with full details
 - **Skill tree viewer**: Native SkiaSharp rendering with zoom, pan, and hover tooltips
 - **Ingame Overlay**: Transparent overlay showing gems, works over PoE (Windows)
@@ -57,12 +57,13 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 
 ### Services
 - **BuildStorage**: Save/load builds to JSON, list saved builds, delete builds
-- **GemDataService**: Loads gem database, provides acquisition info
+- **GemDataService**: Loads gem database, provides acquisition info and icon URLs
+- **GemIconService**: Async download + local caching of gem icons in `~/.config/PathPilot/gem-icons/`
 
 ### UI Components
 - **TreeViewerWindow**: Native SkiaSharp rendering (kein WebView mehr)
 - **SkillTreeCanvas**: Custom Avalonia Control mit ICustomDrawOperation für SkiaSharp
-- **Converters**: RarityColorConverter (Unique=orange, Rare=yellow, Magic=blue)
+- **Converters**: RarityColorConverter (Unique=orange, Rare=yellow, Magic=blue), GemIconPathToBitmapConverter
 - **OverlayWindow**: Transparent, topmost, draggable overlay
 - **SettingsWindow**: Hotkey configuration with key recording
 
@@ -98,8 +99,19 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - **Default Hotkeys**: F11 (toggle visibility), Ctrl+F11 (toggle interactive)
 - **Features**: Draggable, position saved, click-through mode, configurable hotkeys
 
+### Gem Icon System
+- **Gem Model**: `IconUrl` (persisted), `IconPath` (runtime, JsonIgnore), `HasIcon` (computed)
+- **GemIconService**: Downloads icons from PoE Wiki, caches in `~/.config/PathPilot/gem-icons/` (30 Tage)
+- **Icon URLs**: Via `Special:FilePath/{name}_inventory_icon.png` (MediaWiki redirect to actual image)
+- **ConcurrentDictionary**: Dedupliziert parallele Downloads desselben Gems
+- **UI**: 24x24 Icons im MainWindow, 16x16 im Overlay, Farbpunkt-Fallback wenn kein Icon
+- **Async Loading**: UI zeigt sofort Farbpunkte, Icons werden async nachgeladen, dann UI-Refresh
+- **Alte Builds**: `PreloadGemIconsAsync()` enriched IconUrl aus GemDataService falls nicht im Build gespeichert
+
 ### Gem Scraper
-- Scrapes gem data from poewiki.net
+- Scrapes gem data + icon URLs from poewiki.net
+- Scrapes 916 Gems (inkl. Drop-Only Gems ohne Sources)
+- `ParseIconUrl()`: Sucht Infobox inventory-image, Fallback auf `Special:FilePath`
 - Uses `WebUtility.HtmlDecode()` for HTML entities (fixes apostrophe gems like "Battlemage's Cry")
 - Uses `Uri.EscapeDataString()` for URL encoding
 
@@ -117,6 +129,7 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - [x] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, verbundene Nodes anzeigen
 - [x] **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird (Build-Info, Gems, Items)
 - [x] **Quest Tracker**: Quest-Progress mit Speicherung, Kategorie-Tabs (Skills/Trials/Labs), Filter, Rewards, Trial-Trap-Typen
+- [x] **Gem Icons**: Echte PoE Wiki Gem-Icons mit lokalem Caching und Farbpunkt-Fallback
 
 ## Bekannte Probleme / Gotchas
 
