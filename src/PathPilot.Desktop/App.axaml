@@ -13,5 +13,6 @@
         <converters:RarityColorConverter x:Key="RarityColorConverter"/>
         <converters:OverlaySupportColorConverter x:Key="OverlaySupportColorConverter"/>
         <converters:CompletedTextDecorationConverter x:Key="CompletedTextDecorationConverter"/>
+        <converters:GemIconPathToBitmapConverter x:Key="GemIconBitmapConverter"/>
     </Application.Resources>
 </Application>

@@ -33,6 +33,7 @@ public class GemData
 {
     public string Name { get; set; } = "";
     public string Color { get; set; } = "White";
+    public string? IconUrl { get; set; }
     public List<GemSource> Sources { get; set; } = new();
 }
 
@@ -114,7 +115,7 @@ public class GemScraper
                 
                 var gemData = await ScrapeGemPage(gemName);
                 
-                if (gemData != null && gemData.Sources.Count > 0)
+                if (gemData != null)
                 {
                     allGems[gemName] = gemData;
                 }
@@ -142,12 +143,13 @@ private async Task<GemData?> ScrapeGemPage(string gemName)
         var htmlDoc = await Task.Run(() => _web.Load(url));
         var doc = htmlDoc.DocumentNode;  // FIX: Get DocumentNode from HtmlDocument
         
-        var gemData = new GemData 
-        { 
+        var gemData = new GemData
+        {
             Name = gemName,
-            Color = ParseGemColor(doc)
+            Color = ParseGemColor(doc),
+            IconUrl = ParseIconUrl(doc, gemName)
         };
-        
+
         // Find "Quest reward" section
         var questHeader = doc.SelectSingleNode("//h3[.//span[@id='Quest_reward']]");
         if (questHeader != null)
@@ -178,6 +180,34 @@ private async Task<GemData?> ScrapeGemPage(string gemName)
     }
 }
     
+private string? ParseIconUrl(HtmlNode doc, string gemName)
+{
+    try
+    {
+        // Look for inventory icon in the infobox
+        var iconImg = doc.SelectSingleNode("//td[contains(@class, 'inventory-image')]//img")
+                     ?? doc.SelectSingleNode("//span[contains(@class, 'inventory-image')]//img");
+
+        if (iconImg != null)
+        {
+            var src = iconImg.GetAttributeValue("src", "");
+            if (!string.IsNullOrEmpty(src) && src.Contains("inventory_icon", StringComparison.OrdinalIgnoreCase))
+            {
+                if (src.StartsWith("//")) src = "https:" + src;
+                return src;
+            }
+        }
+
+        // Fallback: construct URL via Special:FilePath
+        string encodedName = Uri.EscapeDataString(gemName.Replace(" ", "_"));
+        return $"https://www.poewiki.net/wiki/Special:FilePath/{encodedName}_inventory_icon.png";
+    }
+    catch
+    {
+        return null;
+    }
+}
+
 private string ParseGemColor(HtmlNode doc)
 {
     try

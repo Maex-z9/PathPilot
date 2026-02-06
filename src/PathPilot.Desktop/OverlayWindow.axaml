@@ -104,11 +104,20 @@
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate DataType="models:Gem">
                                                         <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
+                                                            <!-- Gem Icon -->
+                                                            <Image Grid.Column="0"
+                                                                   Width="16" Height="16"
+                                                                   Margin="0,0,8,0"
+                                                                   VerticalAlignment="Center"
+                                                                   Source="{Binding IconPath, Converter={StaticResource GemIconBitmapConverter}}"
+                                                                   IsVisible="{Binding HasIcon}"/>
+                                                            <!-- Color Dot Fallback -->
                                                             <Border Grid.Column="0"
                                                                     Width="8" Height="8"
                                                                     CornerRadius="4"
                                                                     Margin="0,0,8,0"
-                                                                    VerticalAlignment="Center">
+                                                                    VerticalAlignment="Center"
+                                                                    IsVisible="{Binding !HasIcon}">
                                                                 <Border.Background>
                                                                     <SolidColorBrush Color="{Binding Color, Converter={StaticResource GemColorConverter}}"/>
                                                                 </Border.Background>

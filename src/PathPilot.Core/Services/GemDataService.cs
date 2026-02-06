@@ -79,6 +79,7 @@ public class GemDataService
 public class GemAcquisitionInfo
 {
     public string Name { get; set; } = "";
-    public string Color { get; set; } = "White";  // NEW
+    public string Color { get; set; } = "White";
+    public string? IconUrl { get; set; }
     public List<GemSource> Sources { get; set; } = new();
 }

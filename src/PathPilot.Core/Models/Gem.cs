@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace PathPilot.Core.Models
 {
@@ -53,6 +54,23 @@ namespace PathPilot.Core.Models
         /// Acquisition information (quest/vendor/drop)
         /// </summary>
         public string AcquisitionInfo { get; set; } = string.Empty;
+
+        /// <summary>
+        /// URL to the gem icon image
+        /// </summary>
+        public string? IconUrl { get; set; }
+
+        /// <summary>
+        /// Local cache path for the gem icon (runtime only)
+        /// </summary>
+        [JsonIgnore]
+        public string? IconPath { get; set; }
+
+        /// <summary>
+        /// Whether a cached icon is available for display
+        /// </summary>
+        [JsonIgnore]
+        public bool HasIcon => !string.IsNullOrEmpty(IconPath);
 
         /// <summary>
         /// Convenience property for checking if gem is a support gem

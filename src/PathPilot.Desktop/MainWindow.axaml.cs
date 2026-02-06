@@ -7,9 +7,11 @@ using PathPilot.Core.Services;
 using PathPilot.Desktop.Services;
 using PathPilot.Desktop.Settings;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace PathPilot.Desktop;
 
@@ -17,6 +19,7 @@ public partial class MainWindow : Window
 {
     private Build? _currentBuild;
     private readonly GemDataService _gemDataService;
+    private readonly GemIconService _gemIconService;
     private readonly OverlaySettings _overlaySettings;
     private readonly HotkeyService _hotkeyService;
     private readonly OverlayService _overlayService;
@@ -28,6 +31,9 @@ public partial class MainWindow : Window
         // Initialize gem data service
         _gemDataService = new GemDataService();
         _gemDataService.LoadDatabase();
+
+        // Initialize gem icon service
+        _gemIconService = new GemIconService();
 
         // Initialize overlay services
         _overlaySettings = OverlaySettings.Load();
@@ -72,6 +78,7 @@ public partial class MainWindow : Window
     {
         _hotkeyService.Dispose();
         _overlayService.Dispose();
+        _gemIconService.Dispose();
     }
 
     private async void ImportButton_Click(object? sender, RoutedEventArgs e)
@@ -138,7 +145,7 @@ public partial class MainWindow : Window
                         Console.WriteLine($"Build parsed: {_currentBuild.Name}");
                         Console.WriteLine($"SkillSets: {_currentBuild.SkillSets.Count}, ItemSets: {_currentBuild.ItemSets.Count}");
 
-                        // Populate loadout selectors
+                        // Populate loadout selectors and display immediately (with color dots)
                         PopulateLoadoutSelectors();
                         UpdateDisplayedLoadout();
                         BuildTitleText.Text = _currentBuild.CharacterDescription;
@@ -146,6 +153,9 @@ public partial class MainWindow : Window
 
                         // Update overlay with new build
                         _overlayService.UpdateBuild(_currentBuild);
+
+                        // Async load gem icons, then refresh UI
+                        _ = PreloadGemIconsAsync();
                     }
 
                     dialog.Close();
@@ -427,6 +437,9 @@ public partial class MainWindow : Window
 
                     // Update overlay with loaded build
                     _overlayService.UpdateBuild(_currentBuild);
+
+                    // Async load gem icons, then refresh UI
+                    _ = PreloadGemIconsAsync();
                 }
                 dialog.Close();
             }
@@ -476,6 +489,67 @@ public partial class MainWindow : Window
         // Update overlay button tooltip with new hotkey
         OverlayButton.SetValue(ToolTip.TipProperty,
             $"Show overlay ({FormatHotkey(_overlaySettings.ToggleModifiers, _overlaySettings.ToggleKey)} to toggle)");
+    }
+
+    private async Task PreloadGemIconsAsync()
+    {
+        if (_currentBuild == null) return;
+
+        // Enrich gems with IconUrl from database if missing (e.g. loaded from old saves)
+        var allGems = _currentBuild.SkillSets
+            .SelectMany(ss => ss.LinkGroups)
+            .SelectMany(lg => lg.Gems)
+            .GroupBy(g => g.Name)
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (var gem in allGems)
+        {
+            if (string.IsNullOrEmpty(gem.IconUrl))
+            {
+                var gemInfo = _gemDataService.GetGemInfo(gem.Name);
+                if (gemInfo?.IconUrl != null)
+                    gem.IconUrl = gemInfo.IconUrl;
+            }
+        }
+
+        allGems = allGems.Where(g => !string.IsNullOrEmpty(g.IconUrl)).ToList();
+
+        Console.WriteLine($"Loading icons for {allGems.Count} gems...");
+
+        var tasks = allGems.Select(async gem =>
+        {
+            var iconPath = await _gemIconService.GetIconPathAsync(gem.Name, gem.IconUrl);
+            return (gem.Name, iconPath);
+        });
+
+        var results = await Task.WhenAll(tasks);
+
+        // Build a lookup of name -> path
+        var iconPaths = new Dictionary<string, string>();
+        foreach (var (name, path) in results)
+        {
+            if (path != null)
+                iconPaths[name] = path;
+        }
+
+        Console.WriteLine($"Loaded {iconPaths.Count} gem icons");
+
+        // Update all gems across all skill sets with their icon paths
+        foreach (var skillSet in _currentBuild.SkillSets)
+        {
+            foreach (var linkGroup in skillSet.LinkGroups)
+            {
+                foreach (var gem in linkGroup.Gems)
+                {
+                    if (iconPaths.TryGetValue(gem.Name, out var path))
+                        gem.IconPath = path;
+                }
+            }
+        }
+
+        // Refresh the UI to show icons
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => UpdateDisplayedLoadout());
     }
 
     private static string FormatHotkey(Avalonia.Input.KeyModifiers modifiers, Avalonia.Input.Key key)

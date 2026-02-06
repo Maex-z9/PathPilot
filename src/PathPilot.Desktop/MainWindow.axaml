@@ -155,12 +155,20 @@
                                                                 <StackPanel Spacing="6">
                                                                     <!-- Gem Name with Color Indicator -->
                                                                     <Grid ColumnDefinitions="Auto,Auto,*">
-                                                                        <!-- Color Dot -->
-                                                                        <Border Grid.Column="0" 
-                                                                                Width="10" Height="10" 
+                                                                        <!-- Gem Icon (shown when icon is available) -->
+                                                                        <Image Grid.Column="0"
+                                                                               Width="24" Height="24"
+                                                                               Margin="0,0,10,0"
+                                                                               VerticalAlignment="Center"
+                                                                               Source="{Binding IconPath, Converter={StaticResource GemIconBitmapConverter}}"
+                                                                               IsVisible="{Binding HasIcon}"/>
+                                                                        <!-- Color Dot Fallback (shown when no icon) -->
+                                                                        <Border Grid.Column="0"
+                                                                                Width="10" Height="10"
                                                                                 CornerRadius="5"
                                                                                 Margin="0,0,10,0"
-                                                                                VerticalAlignment="Center">
+                                                                                VerticalAlignment="Center"
+                                                                                IsVisible="{Binding !HasIcon}">
                                                                             <Border.Background>
                                                                                 <SolidColorBrush Color="{Binding Color, Converter={StaticResource GemColorConverter}}" />
                                                                             </Border.Background>

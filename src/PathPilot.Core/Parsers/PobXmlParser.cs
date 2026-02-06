@@ -193,6 +193,9 @@ namespace PathPilot.Core.Parsers
                 // Parse color string to enum
                 gem.Color = ParseSocketColor(gemData.Color);
 
+                // Set icon URL
+                gem.IconUrl = gemData.IconUrl;
+
                 // Format acquisition info from sources
                 var earliestSource = gemData.Sources.OrderBy(s => s.Act).FirstOrDefault();
                 if (earliestSource != null)
