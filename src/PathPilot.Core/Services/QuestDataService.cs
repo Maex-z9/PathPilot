@@ -55,23 +55,23 @@ public class QuestDataService
 
             // === ASCENDANCY TRIALS ===
 
-            // Normal Lab Trials (Act 1-3)
-            new() { Name = "Trial of Ascendancy", Act = 1, Reward = QuestReward.AscendancyTrial, Location = "The Lower Prison", RecommendedLevel = 9, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 2, Reward = QuestReward.AscendancyTrial, Location = "The Crypt Level 1", RecommendedLevel = 15, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 2, Reward = QuestReward.AscendancyTrial, Location = "The Chamber of Sins Level 2", RecommendedLevel = 18, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 3, Reward = QuestReward.AscendancyTrial, Location = "The Crematorium", RecommendedLevel = 25, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 3, Reward = QuestReward.AscendancyTrial, Location = "The Catacombs", RecommendedLevel = 27, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 3, Reward = QuestReward.AscendancyTrial, Location = "The Imperial Gardens", RecommendedLevel = 29, IsOptional = true },
+            // Normal Lab Trials (Act 1-3) - unlock Normal Labyrinth
+            new() { Name = "Trial of Ascendancy", Act = 1, Reward = QuestReward.AscendancyTrial, RewardDescription = "Normal Lab", Location = "The Lower Prison", TrapType = "Spike Traps", RecommendedLevel = 9, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 2, Reward = QuestReward.AscendancyTrial, RewardDescription = "Normal Lab", Location = "The Crypt Level 1", TrapType = "Spinning Blades", RecommendedLevel = 15, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 2, Reward = QuestReward.AscendancyTrial, RewardDescription = "Normal Lab", Location = "The Chamber of Sins Level 2", TrapType = "Sawblades", RecommendedLevel = 18, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 3, Reward = QuestReward.AscendancyTrial, RewardDescription = "Normal Lab", Location = "The Crematorium", TrapType = "Furnace Traps", RecommendedLevel = 25, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 3, Reward = QuestReward.AscendancyTrial, RewardDescription = "Normal Lab", Location = "The Catacombs", TrapType = "Blade Sentries", RecommendedLevel = 27, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 3, Reward = QuestReward.AscendancyTrial, RewardDescription = "Normal Lab", Location = "The Imperial Gardens", TrapType = "Spike Traps & Dart Traps", RecommendedLevel = 29, IsOptional = true },
 
-            // Cruel Lab Trials (Act 6-7)
-            new() { Name = "Trial of Ascendancy", Act = 6, Reward = QuestReward.AscendancyTrial, Location = "The Prison (Act 6)", RecommendedLevel = 44, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 7, Reward = QuestReward.AscendancyTrial, Location = "The Crypt (Act 7)", RecommendedLevel = 48, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 7, Reward = QuestReward.AscendancyTrial, Location = "The Chamber of Sins Level 2 (Act 7)", RecommendedLevel = 52, IsOptional = true },
+            // Cruel Lab Trials (Act 6-7) - unlock Cruel Labyrinth
+            new() { Name = "Trial of Ascendancy", Act = 6, Reward = QuestReward.AscendancyTrial, RewardDescription = "Cruel Lab", Location = "The Prison (Act 6)", TrapType = "Spike Traps", RecommendedLevel = 44, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 7, Reward = QuestReward.AscendancyTrial, RewardDescription = "Cruel Lab", Location = "The Crypt (Act 7)", TrapType = "Spinning Blades", RecommendedLevel = 48, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 7, Reward = QuestReward.AscendancyTrial, RewardDescription = "Cruel Lab", Location = "The Chamber of Sins Level 2 (Act 7)", TrapType = "Sawblades", RecommendedLevel = 52, IsOptional = true },
 
-            // Merciless Lab Trials (Act 8-10)
-            new() { Name = "Trial of Ascendancy", Act = 8, Reward = QuestReward.AscendancyTrial, Location = "The Bath House", RecommendedLevel = 58, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 9, Reward = QuestReward.AscendancyTrial, Location = "The Tunnel", RecommendedLevel = 61, IsOptional = true },
-            new() { Name = "Trial of Ascendancy", Act = 10, Reward = QuestReward.AscendancyTrial, Location = "The Ossuary", RecommendedLevel = 65, IsOptional = true },
+            // Merciless Lab Trials (Act 8-10) - unlock Merciless Labyrinth
+            new() { Name = "Trial of Ascendancy", Act = 8, Reward = QuestReward.AscendancyTrial, RewardDescription = "Merciless Lab", Location = "The Bath House", TrapType = "Spike Traps & Blade Sentries", RecommendedLevel = 58, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 9, Reward = QuestReward.AscendancyTrial, RewardDescription = "Merciless Lab", Location = "The Tunnel", TrapType = "Sawblades & Spinning Blades", RecommendedLevel = 61, IsOptional = true },
+            new() { Name = "Trial of Ascendancy", Act = 10, Reward = QuestReward.AscendancyTrial, RewardDescription = "Merciless Lab", Location = "The Ossuary", TrapType = "Dart Traps & Furnace Traps", RecommendedLevel = 65, IsOptional = true },
 
             // === LABYRINTH ===
             new() { Name = "The Labyrinth (Normal)", Act = 3, Reward = QuestReward.Labyrinth, RewardDescription = "+2 Ascendancy Points", Location = "The Aspirants' Plaza", RecommendedLevel = 33, IsOptional = true },

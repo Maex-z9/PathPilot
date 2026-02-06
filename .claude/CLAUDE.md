@@ -103,35 +103,12 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - Uses `WebUtility.HtmlDecode()` for HTML entities (fixes apostrophe gems like "Battlemage's Cry")
 - Uses `Uri.EscapeDataString()` for URL encoding
 
-## Nächste Session - Quest Tracker erweitern
-
-### Bereits implementiert:
-- `PathPilot.Core/Models/Quest.cs` - Quest Model mit QuestReward enum
-- `PathPilot.Core/Services/QuestDataService.cs` - Korrekte Quest-Liste:
-  - 22 Skill Point Quests (Act 1-10)
-  - 12 Ascendancy Trials (6 Normal, 3 Cruel, 3 Merciless)
-  - 4 Labyrinth-Quests (Normal, Cruel, Merciless, Eternal)
-- `OverlayWindow.axaml` - Tab-Buttons [Gems] [Quests] implementiert
-- `CompletedTextDecorationConverter.cs` - Durchgestrichener Text für erledigte Quests
-
-### Nächste Schritte:
-1. Progress-Speicherung in `~/.config/PathPilot/quest-progress.json`
-2. Filter nach Act oder nur unerledigte anzeigen
-3. Trials und Labs auch anzeigen (separate Tabs oder Abschnitte)
-4. Quest-Reward (+1 Passive, +2 Passives) anzeigen
-5. **Lab Trial Positionen hinzufügen** - Genaue Spawn-Locations für alle Trials
-
-### Quest-Daten (22 Skill Points total, +2 für Bandits):
-- Act 1: 2 Quests (Dweller, Fairgraves)
-- Act 2: 2 Quests (Great White Beast, Bandits +2)
-- Act 3: 2 Quests (Victario, Piety's Pets)
-- Act 4: 1 Quest (Deshret)
-- Act 5: 2 Quests (Science, Kitava's Torments)
-- Act 6: 3 Quests (Father of War, Tukohama, Abberath)
-- Act 7: 3 Quests (Greust, Gruthkul, Kishara)
-- Act 8: 3 Quests (Love is Dead, Yugul, Gemling Legion)
-- Act 9: 2 Quests (Shakari, Kira)
-- Act 10: 2 Quests (Vilenta, End to Hunger)
+### Quest Tracker System
+- **Quest Model** (`Quest.cs`): INotifyPropertyChanged, Id aus Act+Name+Location, TrapType Property
+- **QuestDataService**: 22 Skill Point Quests, 12 Ascendancy Trials (mit Trap-Typen), 4 Labs
+- **QuestProgressService**: Speichert/lädt erledigte Quest-IDs in `~/.config/PathPilot/quest-progress.json`
+- **Overlay UI**: Sub-Tabs [Skills] [Trials] [Labs], "Erledigte ausblenden" Filter, Reward-Badges, Trap-Type Anzeige
+- **Fortschrittsanzeige**: Zähler (z.B. "3/22") pro Kategorie
 
 ## TODOs / Planned Features
 
@@ -139,7 +116,7 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 - [x] **Skilltree Viewer - Navigation**: Mausrad-Zoom, Drag-Pan, Start zentriert auf allocated Nodes
 - [x] **Skilltree Viewer - Interaktiv**: Node-Hover mit Tooltips, verbundene Nodes anzeigen
 - [x] **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird (Build-Info, Gems, Items)
-- [ ] **Quest Tracker**: Zeigt an welche Quests als nächstes erledigt werden sollten (Skill Points, Trials, wichtige Items) - **IN PROGRESS**
+- [x] **Quest Tracker**: Quest-Progress mit Speicherung, Kategorie-Tabs (Skills/Trials/Labs), Filter, Rewards, Trial-Trap-Typen
 
 ## Bekannte Probleme / Gotchas
 

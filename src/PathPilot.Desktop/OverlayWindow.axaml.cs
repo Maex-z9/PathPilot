@@ -9,6 +9,7 @@ using PathPilot.Desktop.Platform;
 using PathPilot.Desktop.Settings;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -19,10 +20,19 @@ public partial class OverlayWindow : Window
     private readonly IOverlayPlatform _platform;
     private readonly OverlaySettings _settings;
     private readonly QuestDataService _questDataService;
+    private readonly QuestProgressService _questProgressService;
     private Build? _currentBuild;
     private bool _isDragging;
     private Point _dragStartPoint;
-    private bool _showingGems = true;
+    private List<Quest> _allQuests = new();
+    private HashSet<string> _completedQuestIds = new();
+    private QuestCategory _currentQuestCategory = QuestCategory.SkillPoints;
+    private bool _hideCompleted;
+
+    private enum QuestCategory { SkillPoints, Trials, Labs }
+
+    private static readonly SolidColorBrush ActiveTabBrush = new(Color.FromRgb(74, 158, 255));
+    private static readonly SolidColorBrush InactiveTabBrush = new(Color.FromRgb(64, 64, 64));
 
     public OverlayWindow(OverlaySettings settings)
     {
@@ -31,6 +41,7 @@ public partial class OverlayWindow : Window
         _settings = settings;
         _platform = new WindowsOverlayPlatform();
         _questDataService = new QuestDataService();
+        _questProgressService = new QuestProgressService();
 
         // Set initial position from settings
         Position = new PixelPoint((int)_settings.OverlayX, (int)_settings.OverlayY);
@@ -46,32 +57,116 @@ public partial class OverlayWindow : Window
         // Update hotkey info text
         UpdateHotkeyInfoText();
 
-        // Load quests
+        // Load quests with saved progress
         LoadQuests();
     }
 
     private void LoadQuests()
     {
-        var quests = _questDataService.GetSkillPointQuests();
-        QuestsListBox.ItemsSource = quests;
+        _allQuests = _questDataService.GetAllQuests();
+        _completedQuestIds = _questProgressService.LoadCompletedQuestIds();
+
+        // Restore completed state
+        foreach (var quest in _allQuests)
+        {
+            if (_completedQuestIds.Contains(quest.Id))
+                quest.IsCompleted = true;
+
+            quest.PropertyChanged += OnQuestCompletedChanged;
+        }
+
+        UpdateQuestDisplay();
+    }
+
+    private void OnQuestCompletedChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(Quest.IsCompleted) || sender is not Quest quest)
+            return;
+
+        if (quest.IsCompleted)
+            _completedQuestIds.Add(quest.Id);
+        else
+            _completedQuestIds.Remove(quest.Id);
+
+        _questProgressService.SaveCompletedQuestIds(_completedQuestIds);
+        UpdateQuestProgressText();
+
+        if (_hideCompleted)
+            UpdateQuestDisplay();
+    }
+
+    private void UpdateQuestDisplay()
+    {
+        var filtered = _currentQuestCategory switch
+        {
+            QuestCategory.SkillPoints => _allQuests.Where(q => q.Reward == QuestReward.SkillPoint),
+            QuestCategory.Trials => _allQuests.Where(q => q.Reward == QuestReward.AscendancyTrial),
+            QuestCategory.Labs => _allQuests.Where(q => q.Reward == QuestReward.Labyrinth),
+            _ => _allQuests.AsEnumerable()
+        };
+
+        if (_hideCompleted)
+            filtered = filtered.Where(q => !q.IsCompleted);
+
+        QuestsListBox.ItemsSource = filtered.ToList();
+        UpdateQuestProgressText();
+    }
+
+    private void UpdateQuestProgressText()
+    {
+        var categoryQuests = _currentQuestCategory switch
+        {
+            QuestCategory.SkillPoints => _allQuests.Where(q => q.Reward == QuestReward.SkillPoint),
+            QuestCategory.Trials => _allQuests.Where(q => q.Reward == QuestReward.AscendancyTrial),
+            QuestCategory.Labs => _allQuests.Where(q => q.Reward == QuestReward.Labyrinth),
+            _ => _allQuests.AsEnumerable()
+        };
+
+        var total = categoryQuests.Count();
+        var completed = categoryQuests.Count(q => q.IsCompleted);
+        QuestProgressText.Text = $"{completed}/{total}";
+    }
+
+    private void SetQuestCategoryTab(QuestCategory category)
+    {
+        _currentQuestCategory = category;
+
+        SkillPointsTabButton.Background = category == QuestCategory.SkillPoints ? ActiveTabBrush : InactiveTabBrush;
+        TrialsTabButton.Background = category == QuestCategory.Trials ? ActiveTabBrush : InactiveTabBrush;
+        LabsTabButton.Background = category == QuestCategory.Labs ? ActiveTabBrush : InactiveTabBrush;
+
+        UpdateQuestDisplay();
+    }
+
+    private void SkillPointsTabButton_Click(object? sender, RoutedEventArgs e) =>
+        SetQuestCategoryTab(QuestCategory.SkillPoints);
+
+    private void TrialsTabButton_Click(object? sender, RoutedEventArgs e) =>
+        SetQuestCategoryTab(QuestCategory.Trials);
+
+    private void LabsTabButton_Click(object? sender, RoutedEventArgs e) =>
+        SetQuestCategoryTab(QuestCategory.Labs);
+
+    private void HideCompletedCheckBox_Click(object? sender, RoutedEventArgs e)
+    {
+        _hideCompleted = HideCompletedCheckBox.IsChecked == true;
+        UpdateQuestDisplay();
     }
 
     private void GemsTabButton_Click(object? sender, RoutedEventArgs e)
     {
-        _showingGems = true;
         GemsPanel.IsVisible = true;
         QuestsPanel.IsVisible = false;
-        GemsTabButton.Background = new SolidColorBrush(Color.FromRgb(74, 158, 255));
-        QuestsTabButton.Background = new SolidColorBrush(Color.FromRgb(64, 64, 64));
+        GemsTabButton.Background = ActiveTabBrush;
+        QuestsTabButton.Background = InactiveTabBrush;
     }
 
     private void QuestsTabButton_Click(object? sender, RoutedEventArgs e)
     {
-        _showingGems = false;
         GemsPanel.IsVisible = false;
         QuestsPanel.IsVisible = true;
-        GemsTabButton.Background = new SolidColorBrush(Color.FromRgb(64, 64, 64));
-        QuestsTabButton.Background = new SolidColorBrush(Color.FromRgb(74, 158, 255));
+        GemsTabButton.Background = InactiveTabBrush;
+        QuestsTabButton.Background = ActiveTabBrush;
     }
 
     private void UpdateHotkeyInfoText()

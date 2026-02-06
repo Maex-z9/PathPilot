@@ -138,13 +138,65 @@
                     </StackPanel>
 
                     <!-- Quests Panel -->
-                    <StackPanel Name="QuestsPanel" Spacing="8" IsVisible="False">
-                        <TextBlock Text="QUEST TRACKER"
-                                   FontSize="11"
-                                   FontWeight="SemiBold"
-                                   Foreground="#666"
-                                   Margin="0,0,0,5"/>
+                    <StackPanel Name="QuestsPanel" Spacing="6" IsVisible="False">
 
+                        <!-- Quest Category Tabs -->
+                        <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,4">
+                            <Button Name="SkillPointsTabButton"
+                                    Grid.Column="0"
+                                    Content="Skills"
+                                    Click="SkillPointsTabButton_Click"
+                                    Background="#4a9eff"
+                                    Foreground="White"
+                                    FontSize="11"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    Padding="4,4"
+                                    Margin="0,0,3,0"
+                                    CornerRadius="3"/>
+                            <Button Name="TrialsTabButton"
+                                    Grid.Column="1"
+                                    Content="Trials"
+                                    Click="TrialsTabButton_Click"
+                                    Background="#404040"
+                                    Foreground="White"
+                                    FontSize="11"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    Padding="4,4"
+                                    Margin="0,0,3,0"
+                                    CornerRadius="3"/>
+                            <Button Name="LabsTabButton"
+                                    Grid.Column="2"
+                                    Content="Labs"
+                                    Click="LabsTabButton_Click"
+                                    Background="#404040"
+                                    Foreground="White"
+                                    FontSize="11"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    Padding="4,4"
+                                    Margin="0,0,0,0"
+                                    CornerRadius="3"/>
+                        </Grid>
+
+                        <!-- Filter Row -->
+                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,4">
+                            <CheckBox Name="HideCompletedCheckBox"
+                                      Grid.Column="0"
+                                      Content="Erledigte ausblenden"
+                                      FontSize="10"
+                                      Foreground="#aaa"
+                                      Click="HideCompletedCheckBox_Click"
+                                      VerticalAlignment="Center"/>
+                            <TextBlock Name="QuestProgressText"
+                                       Grid.Column="2"
+                                       FontSize="10"
+                                       Foreground="#888"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Quest List -->
                         <ItemsControl Name="QuestsListBox">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="models:Quest">
@@ -152,7 +204,7 @@
                                             CornerRadius="4"
                                             Padding="8"
                                             Margin="0,0,0,4">
-                                        <Grid ColumnDefinitions="Auto,*">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
                                             <CheckBox Grid.Column="0"
                                                       IsChecked="{Binding IsCompleted}"
                                                       Margin="0,0,8,0"
@@ -171,7 +223,25 @@
                                                                FontSize="10"
                                                                Foreground="#4aff9d"/>
                                                 </StackPanel>
+                                                <!-- Trap Type for Trials -->
+                                                <TextBlock Name="TrapTypeText"
+                                                           Text="{Binding TrapType}"
+                                                           FontSize="10"
+                                                           Foreground="#ff9d4a"
+                                                           IsVisible="{Binding TrapType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                             </StackPanel>
+                                            <!-- Reward Badge -->
+                                            <Border Grid.Column="2"
+                                                    Background="#33ffffff"
+                                                    CornerRadius="3"
+                                                    Padding="5,2"
+                                                    VerticalAlignment="Center"
+                                                    IsVisible="{Binding RewardDescription, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                                <TextBlock Text="{Binding RewardDescription}"
+                                                           FontSize="9"
+                                                           Foreground="#ffcc00"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
