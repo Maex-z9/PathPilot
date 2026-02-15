@@ -27,7 +27,7 @@ jobs:
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Restore
-        run: dotnet restore src/PathPilot.Desktop/PathPilot.Desktop.csproj --runtime win-x64
+        run: dotnet restore src/PathPilot.Desktop/PathPilot.Desktop.csproj
 
       - name: Publish
         run: >
@@ -36,7 +36,6 @@ jobs:
           --runtime win-x64
           --self-contained true
           --output build/publish
-          --no-restore
           -p:PublishSingleFile=false
 
       - name: Create portable ZIP
