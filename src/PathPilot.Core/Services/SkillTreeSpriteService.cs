@@ -129,9 +129,9 @@ public class SkillTreeSpriteService : IDisposable
                 var age = DateTime.Now - File.GetLastWriteTime(cachePath);
                 if (age < TimeSpan.FromDays(CACHE_DAYS))
                 {
-                    // Load from disk cache
-                    using var stream = File.OpenRead(cachePath);
-                    var bitmap = SKBitmap.Decode(stream);
+                    // Load from disk cache on background thread to avoid blocking UI
+                    var cachedBytes = await File.ReadAllBytesAsync(cachePath).ConfigureAwait(false);
+                    var bitmap = SKBitmap.Decode(cachedBytes);
                     if (bitmap != null)
                     {
                         lock (_loadedBitmaps)
@@ -144,16 +144,16 @@ public class SkillTreeSpriteService : IDisposable
             }
 
             // Download from web
-            using var response = await _httpClient.GetAsync(fullUrl);
+            using var response = await _httpClient.GetAsync(fullUrl).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
                 return null;
 
-            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
             if (bytes.Length == 0)
                 return null;
 
             // Save to disk cache
-            await File.WriteAllBytesAsync(cachePath, bytes);
+            await File.WriteAllBytesAsync(cachePath, bytes).ConfigureAwait(false);
 
             // Decode to bitmap
             var downloadedBitmap = SKBitmap.Decode(bytes);

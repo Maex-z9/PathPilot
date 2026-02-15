@@ -20,8 +20,9 @@ namespace PathPilot.Desktop.Controls;
 
 /// <summary>
 /// Custom Avalonia control for rendering Path of Exile skill tree using SkiaSharp.
-/// Uses SKPicture caching for smooth panning — tree is rendered once to a display list,
-/// then replayed instantly during pan. Rebuilds only on zoom/allocation/sprite changes.
+/// Uses off-screen SKBitmap tile caching for smooth panning — tree is rendered once to a
+/// cache bitmap covering ~2x the viewport, then blitted during pan. Rebuilds only on
+/// zoom/allocation/sprite changes or when viewport moves beyond cached region.
 /// </summary>
 public class SkillTreeCanvas : Control
 {
@@ -62,7 +63,7 @@ public class SkillTreeCanvas : Control
     }
 
     /// <summary>
-    /// Mastery selections decoded from tree URL: nodeId → effectId
+    /// Mastery selections decoded from tree URL: nodeId -> effectId
     /// </summary>
     public Dictionary<int, int>? MasterySelections
     {
@@ -98,7 +99,7 @@ public class SkillTreeCanvas : Control
     private const float MinZoom = 0.08f;
     private const float MaxZoom = 0.80f;
 
-    // Zoom event throttle — touchpads fire events at very high frequency
+    // Zoom event throttle -- touchpads fire events at very high frequency
     private DateTime _lastZoomTime = DateTime.MinValue;
     private static readonly TimeSpan ZoomThrottleInterval = TimeSpan.FromMilliseconds(16); // ~60fps cap
 
@@ -109,15 +110,29 @@ public class SkillTreeCanvas : Control
     private CancellationTokenSource? _lodPreloadCts = null;
     private DispatcherTimer? _lodDebounceTimer = null;
 
-    // Cached sprite data — rebuilt only when zoom key changes
+    // Cached sprite data -- rebuilt only when zoom key changes
     private Dictionary<string, SKBitmap> _cachedSpriteBitmaps = new();
     private Dictionary<string, SpriteSheetData> _cachedSpriteCoords = new();
     private string? _cachedZoomKey = null;
 
     // Sprite scale: converts sprite-sheet pixels to world-space units.
-    // At zoom key "0.1246", a 28px sprite → 28*scale world units.
+    // At zoom key "0.1246", a 28px sprite -> 28*scale world units.
     // Factor 0.5 because GGG sprites are designed for 2x display density.
     private float _spriteScale = 0.5f / 0.1246f;
+
+    // Tile cache: a single off-screen bitmap covering a region larger than the viewport.
+    // During pan, only the blit offset changes -- no re-rendering until viewport leaves cached area.
+    internal SKBitmap? _tileCacheBitmap;
+    internal SKRect _tileCacheWorldRect;      // World-space rect the cache covers
+    internal float _tileCacheZoom;             // Zoom level when cache was created
+    internal string? _tileCacheZoomKey;        // Sprite zoom key when cache was created
+    internal int _tileCacheAllocVersion;       // Allocation version counter when cache was created
+    internal int _tileCacheHighlightVersion;   // Highlight version when cache was created
+    private int _allocVersion = 0;             // Incremented when allocated nodes change
+    private int _highlightVersion = 0;         // Incremented when highlights change
+
+    // Maximum tile cache size in pixels (prevents OOM at high zoom)
+    private const int MaxTileCachePixels = 4096;
 
 
     static SkillTreeCanvas()
@@ -125,10 +140,40 @@ public class SkillTreeCanvas : Control
         AffectsRender<SkillTreeCanvas>(TreeDataProperty, AllocatedNodeIdsProperty, ZoomLevelProperty, BackgroundProperty, HighlightedNodeIdsProperty);
     }
 
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        if (change.Property == AllocatedNodeIdsProperty)
+        {
+            _allocVersion++;
+            InvalidateTileCache();
+        }
+        else if (change.Property == HighlightedNodeIdsProperty)
+        {
+            _highlightVersion++;
+            InvalidateTileCache();
+        }
+        else if (change.Property == ZoomLevelProperty)
+        {
+            InvalidateTileCache();
+        }
+    }
+
+    /// <summary>
+    /// Invalidates the tile cache, forcing a full re-render on next frame.
+    /// </summary>
+    private void InvalidateTileCache()
+    {
+        _tileCacheBitmap?.Dispose();
+        _tileCacheBitmap = null;
+    }
+
     public void SetSpriteService(SkillTreeSpriteService spriteService)
     {
         _spriteService = spriteService;
         _cachedZoomKey = null;
+        InvalidateTileCache();
         InvalidateVisual();
     }
 
@@ -165,6 +210,9 @@ public class SkillTreeCanvas : Control
         // Update sprite scale from zoom key (0.5 factor for 2x density sprites)
         if (float.TryParse(_currentSpriteZoomKey, NumberStyles.Float, CultureInfo.InvariantCulture, out var zoomKeyFloat) && zoomKeyFloat > 0)
             _spriteScale = 0.5f / zoomKeyFloat;
+
+        // Sprite cache change invalidates tile cache
+        InvalidateTileCache();
     }
 
     private static string GetSpriteZoomKey(float currentZoom)
@@ -210,7 +258,7 @@ public class SkillTreeCanvas : Control
     {
         base.OnPointerWheelChanged(e);
 
-        // Throttle zoom events — touchpads fire at very high frequency
+        // Throttle zoom events -- touchpads fire at very high frequency
         var now = DateTime.UtcNow;
         if (now - _lastZoomTime < ZoomThrottleInterval)
         {
@@ -237,7 +285,7 @@ public class SkillTreeCanvas : Control
             ToolTip.SetIsOpen(this, false);
         }
 
-        // Check sprite LOD threshold crossing — debounced to avoid loading all zoom levels
+        // Check sprite LOD threshold crossing -- debounced to avoid loading all zoom levels
         // during rapid touchpad zoom (which would OOM from 92MB+ of decoded bitmaps)
         var newZoomKey = GetSpriteZoomKey((float)ZoomLevel);
         if (newZoomKey != _currentSpriteZoomKey && _spriteService != null && TreeData != null)
@@ -247,9 +295,8 @@ public class SkillTreeCanvas : Control
 
             _currentSpriteZoomKey = newZoomKey;
             _cachedZoomKey = null; // Force sprite cache rebuild
-    
 
-            // Debounce: reset timer — only preload after zooming settles for 300ms
+            // Debounce: reset timer -- only preload after zooming settles for 300ms
             if (_lodDebounceTimer == null)
             {
                 _lodDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
@@ -259,7 +306,7 @@ public class SkillTreeCanvas : Control
             _lodDebounceTimer.Start();
         }
 
-        // Zoom changed → just re-render with new transform
+        // Zoom changed -> tile cache already invalidated via OnPropertyChanged
         InvalidateVisual();
         e.Handled = true;
     }
@@ -289,7 +336,7 @@ public class SkillTreeCanvas : Control
                 if (_currentSpriteZoomKey == capturedZoomKey)
                 {
                     _cachedZoomKey = null;
-            
+                    InvalidateTileCache();
                     InvalidateVisual();
                 }
             });
@@ -341,7 +388,7 @@ public class SkillTreeCanvas : Control
             _offsetY -= (float)(delta.Y / ZoomLevel);
 
             _lastPointerPos = currentPos;
-            // Pan only changes offset — picture is still valid, just replay with new offset
+            // Pan only changes offset -- tile cache is still valid, just blit with new offset
             InvalidateVisual();
             e.Handled = true;
         }
@@ -391,7 +438,6 @@ public class SkillTreeCanvas : Control
         _offsetX += worldBeforeX - worldAfterX;
         _offsetY += worldBeforeY - worldAfterY;
 
-
         InvalidateVisual();
     }
 
@@ -410,7 +456,6 @@ public class SkillTreeCanvas : Control
         _offsetX += worldBeforeX - worldAfterX;
         _offsetY += worldBeforeY - worldAfterY;
 
-
         InvalidateVisual();
     }
 
@@ -427,7 +472,6 @@ public class SkillTreeCanvas : Control
         var worldAfterY = (float)(centerY / ZoomLevel + _offsetY);
         _offsetX += worldBeforeX - worldAfterX;
         _offsetY += worldBeforeY - worldAfterY;
-
 
         InvalidateVisual();
     }
@@ -533,7 +577,7 @@ public class SkillTreeCanvas : Control
             }
         }
 
-        // Mastery effects — highlight allocated effect in orange
+        // Mastery effects -- highlight allocated effect in orange
         if (node.MasteryEffects != null && node.MasteryEffects.Count > 0)
         {
             // Check if this node has an allocated mastery effect
@@ -621,14 +665,12 @@ public class SkillTreeCanvas : Control
         _offsetX = node.CalculatedX.Value - (float)(Bounds.Width / 2 / ZoomLevel);
         _offsetY = node.CalculatedY.Value - (float)(Bounds.Height / 2 / ZoomLevel);
 
-
         InvalidateVisual();
     }
 
     public void ClearFocusedNode()
     {
         _focusedNodeId = null;
-
         InvalidateVisual();
     }
 
@@ -673,7 +715,7 @@ public class SkillTreeCanvas : Control
         {
             _offsetX = centerX - (float)(Bounds.Width / 2 / ZoomLevel);
             _offsetY = centerY - (float)(Bounds.Height / 2 / ZoomLevel);
-    
+
             InvalidateVisual();
         }
     }
@@ -689,16 +731,17 @@ public class SkillTreeCanvas : Control
         {
             _offsetX = treeCenterX - (float)(Bounds.Width / 2 / ZoomLevel);
             _offsetY = treeCenterY - (float)(Bounds.Height / 2 / ZoomLevel);
-    
+
             InvalidateVisual();
         }
     }
 
     /// <summary>
-    /// Custom draw operation using SKPicture caching.
-    /// Records all tree draw commands to an SKPicture once, then replays it each frame.
-    /// During pan, only the transform changes — the picture is replayed instantly.
-    /// All SKPicture lifecycle management happens on the render thread to avoid race conditions.
+    /// Custom draw operation using off-screen SKBitmap tile caching.
+    /// Renders the tree scene to a cache bitmap covering ~2x the viewport area.
+    /// During pan, blits the cached bitmap with offset -- no re-rendering needed.
+    /// Rebuilds cache only on zoom/allocation/sprite changes or viewport leaving cached area.
+    /// Highlights are drawn on top of the cached content (not cached themselves for hover responsiveness).
     /// </summary>
     private class SkillTreeDrawOperation : ICustomDrawOperation
     {
@@ -721,6 +764,76 @@ public class SkillTreeCanvas : Control
 
         // Below this zoom, use colored circles instead of sprites
         private const float SpriteZoomThreshold = 0.10f;
+
+        // Pooled SKPaint objects -- reused across frames to avoid alloc/dispose overhead
+        private static readonly SKPaint s_connectionUnallocatedPaint = new()
+        {
+            Color = new SKColor(80, 80, 80),
+            StrokeWidth = 2,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
+
+        private static readonly SKPaint s_connectionAllocatedPaint = new()
+        {
+            Color = new SKColor(200, 150, 50),
+            StrokeWidth = 3,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke
+        };
+
+        private static readonly SKPaint s_nodeAllocatedPaint = new()
+        {
+            Color = new SKColor(200, 150, 50),
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true
+        };
+
+        private static readonly SKPaint s_nodeUnallocatedPaint = new()
+        {
+            Color = new SKColor(60, 60, 60),
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true
+        };
+
+        private static readonly SKPaint s_masteryPaint = new()
+        {
+            Color = new SKColor(100, 80, 120),
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true
+        };
+
+        private static readonly SKPaint s_highlightPaint = new()
+        {
+            Color = new SKColor(100, 200, 255, 160),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 4,
+            IsAntialias = true
+        };
+
+        private static readonly SKPaint s_focusPaint = new()
+        {
+            Color = new SKColor(100, 255, 200, 220),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 6,
+            IsAntialias = true
+        };
+
+        private static readonly SKPaint s_glowPaint = new()
+        {
+            Color = new SKColor(100, 255, 200, 60),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 14,
+            IsAntialias = true,
+            MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6)
+        };
+
+        // Reusable bitmap paint -- filter quality set per-use based on zoom
+        private static readonly SKPaint s_bitmapPaint = new()
+        {
+            FilterQuality = SKFilterQuality.Medium,
+            IsAntialias = true
+        };
 
         public SkillTreeDrawOperation(Rect bounds, SkillTreeData treeData, HashSet<int> allocatedNodeIds,
             float zoomLevel, float offsetX, float offsetY,
@@ -763,24 +876,174 @@ public class SkillTreeCanvas : Control
 
             bool useSprites = _zoomLevel >= SpriteZoomThreshold && _spriteBitmaps.Count > 0;
 
-            // Apply zoom + pan transform, then render directly (no SKPicture)
-            canvas.Save();
-            canvas.Translate(-_offsetX * _zoomLevel, -_offsetY * _zoomLevel);
-            canvas.Scale(_zoomLevel, _zoomLevel);
+            // Set bitmap filter quality based on zoom level
+            s_bitmapPaint.FilterQuality = _zoomLevel > 0.3f ? SKFilterQuality.Medium : SKFilterQuality.Low;
 
-            using var bitmapPaint = new SKPaint
+            // Try to use tile cache for fast pan rendering
+            bool cacheValid = IsTileCacheValid();
+
+            if (cacheValid && _owner._tileCacheBitmap != null)
             {
-                FilterQuality = SKFilterQuality.Medium,
-                IsAntialias = true
-            };
+                // FAST PATH: Blit cached bitmap to screen with offset
+                BlitTileCache(canvas);
+            }
+            else
+            {
+                // SLOW PATH: Rebuild tile cache, then blit
+                RebuildTileCache(canvas, useSprites);
+            }
 
+            // Draw highlights on top (not cached -- they change with hover)
+            if (_highlightedNodeIds != null && _highlightedNodeIds.Count > 0)
+            {
+                canvas.Save();
+                canvas.Translate(-_offsetX * _zoomLevel, -_offsetY * _zoomLevel);
+                canvas.Scale(_zoomLevel, _zoomLevel);
+                DrawHighlights(canvas);
+                canvas.Restore();
+            }
+        }
+
+        private bool IsTileCacheValid()
+        {
+            if (_owner._tileCacheBitmap == null)
+                return false;
+
+            // Zoom changed
+            if (Math.Abs(_owner._tileCacheZoom - _zoomLevel) > 0.0001f)
+                return false;
+
+            // Sprite zoom key changed
+            if (_owner._tileCacheZoomKey != _owner._currentSpriteZoomKey)
+                return false;
+
+            // Allocation changed
+            if (_owner._tileCacheAllocVersion != _owner._allocVersion)
+                return false;
+
+            // Highlight changed
+            if (_owner._tileCacheHighlightVersion != _owner._highlightVersion)
+                return false;
+
+            // Check if viewport is still within cached region (with 25% margin)
+            var cacheRect = _owner._tileCacheWorldRect;
+            var marginX = cacheRect.Width * 0.25f;
+            var marginY = cacheRect.Height * 0.25f;
+
+            // Viewport must be fully inside the cache with margin
+            if (_visibleRect.Left < cacheRect.Left + marginX ||
+                _visibleRect.Right > cacheRect.Right - marginX ||
+                _visibleRect.Top < cacheRect.Top + marginY ||
+                _visibleRect.Bottom > cacheRect.Bottom - marginY)
+                return false;
+
+            return true;
+        }
+
+        private void BlitTileCache(SKCanvas canvas)
+        {
+            var cacheBitmap = _owner._tileCacheBitmap!;
+            var cacheWorldRect = _owner._tileCacheWorldRect;
+            var cacheZoom = _owner._tileCacheZoom;
+
+            // Calculate source rect in cache bitmap pixels
+            // The cache covers cacheWorldRect in world space.
+            // The viewport covers _visibleRect in world space.
+            // Cache bitmap pixel = (worldCoord - cacheWorldRect.Left) * cacheZoom
+            float srcLeft = (_visibleRect.Left - cacheWorldRect.Left) * cacheZoom;
+            float srcTop = (_visibleRect.Top - cacheWorldRect.Top) * cacheZoom;
+            float srcWidth = _visibleRect.Width * cacheZoom;
+            float srcHeight = _visibleRect.Height * cacheZoom;
+
+            var srcRect = new SKRect(srcLeft, srcTop, srcLeft + srcWidth, srcTop + srcHeight);
+            var destRect = new SKRect(0, 0, (float)_bounds.Width, (float)_bounds.Height);
+
+            canvas.DrawBitmap(cacheBitmap, srcRect, destRect);
+        }
+
+        private void RebuildTileCache(SKCanvas canvas, bool useSprites)
+        {
+            // Calculate cache region: expand viewport by 50% in each direction (covers ~2x area)
+            float expandX = _visibleRect.Width * 0.5f;
+            float expandY = _visibleRect.Height * 0.5f;
+            var cacheWorldRect = new SKRect(
+                _visibleRect.Left - expandX,
+                _visibleRect.Top - expandY,
+                _visibleRect.Right + expandX,
+                _visibleRect.Bottom + expandY);
+
+            // Calculate cache bitmap size in pixels
+            int cachePixelWidth = (int)(cacheWorldRect.Width * _zoomLevel);
+            int cachePixelHeight = (int)(cacheWorldRect.Height * _zoomLevel);
+
+            // Clamp to max tile cache size to prevent OOM
+            if (cachePixelWidth > MaxTileCachePixels || cachePixelHeight > MaxTileCachePixels)
+            {
+                float scaleDown = Math.Min(
+                    (float)MaxTileCachePixels / cachePixelWidth,
+                    (float)MaxTileCachePixels / cachePixelHeight);
+
+                // Reduce cache margin rather than reduce quality
+                float newExpandX = expandX * scaleDown;
+                float newExpandY = expandY * scaleDown;
+                cacheWorldRect = new SKRect(
+                    _visibleRect.Left - newExpandX,
+                    _visibleRect.Top - newExpandY,
+                    _visibleRect.Right + newExpandX,
+                    _visibleRect.Bottom + newExpandY);
+
+                cachePixelWidth = (int)(cacheWorldRect.Width * _zoomLevel);
+                cachePixelHeight = (int)(cacheWorldRect.Height * _zoomLevel);
+
+                // Final safety clamp
+                cachePixelWidth = Math.Min(cachePixelWidth, MaxTileCachePixels);
+                cachePixelHeight = Math.Min(cachePixelHeight, MaxTileCachePixels);
+            }
+
+            // Ensure minimum size
+            if (cachePixelWidth < 1) cachePixelWidth = 1;
+            if (cachePixelHeight < 1) cachePixelHeight = 1;
+
+            // Dispose old cache
+            _owner._tileCacheBitmap?.Dispose();
+            _owner._tileCacheBitmap = null;
+
+            // Create new off-screen bitmap
+            var info = new SKImageInfo(cachePixelWidth, cachePixelHeight, SKColorType.Rgba8888, SKAlphaType.Premul);
+            var cacheBitmap = new SKBitmap(info);
+            using var cacheCanvas = new SKCanvas(cacheBitmap);
+
+            // Clear with transparent (the background is already drawn by the Avalonia control)
+            cacheCanvas.Clear(SKColors.Transparent);
+
+            // Transform: map world coords to cache bitmap coords
+            // bitmap pixel = (world - cacheWorldRect.Left) * zoom
+            cacheCanvas.Translate(-cacheWorldRect.Left * _zoomLevel, -cacheWorldRect.Top * _zoomLevel);
+            cacheCanvas.Scale(_zoomLevel, _zoomLevel);
+
+            // Set visible rect for culling to the cache region (wider than viewport)
+            var savedVisibleRect = _visibleRect;
+            _visibleRect = cacheWorldRect;
+
+            // Render scene to cache
             if (useSprites)
-                DrawGroupBackgrounds(canvas, bitmapPaint);
-            DrawConnections(canvas);
-            DrawNodes(canvas, useSprites, bitmapPaint);
-            DrawHighlights(canvas);
+                DrawGroupBackgrounds(cacheCanvas, s_bitmapPaint);
+            DrawConnections(cacheCanvas);
+            DrawNodes(cacheCanvas, useSprites, s_bitmapPaint);
 
-            canvas.Restore();
+            // Restore visible rect
+            _visibleRect = savedVisibleRect;
+
+            // Store cache state
+            _owner._tileCacheBitmap = cacheBitmap;
+            _owner._tileCacheWorldRect = cacheWorldRect;
+            _owner._tileCacheZoom = _zoomLevel;
+            _owner._tileCacheZoomKey = _owner._currentSpriteZoomKey;
+            _owner._tileCacheAllocVersion = _owner._allocVersion;
+            _owner._tileCacheHighlightVersion = _owner._highlightVersion;
+
+            // Blit the relevant portion to screen
+            BlitTileCache(canvas);
         }
 
         // Visible world-space rectangle for frustum culling
@@ -832,26 +1095,10 @@ public class SkillTreeCanvas : Control
 
         private void DrawConnections(SKCanvas canvas)
         {
-            using var unallocatedPaint = new SKPaint
-            {
-                Color = new SKColor(80, 80, 80),
-                StrokeWidth = 2,
-                IsAntialias = true,
-                Style = SKPaintStyle.Stroke
-            };
-
-            using var allocatedPaint = new SKPaint
-            {
-                Color = new SKColor(200, 150, 50),
-                StrokeWidth = 3,
-                IsAntialias = true,
-                Style = SKPaintStyle.Stroke
-            };
-
             using var unallocatedPath = new SKPath();
             using var allocatedPath = new SKPath();
 
-            var drawnConnections = new HashSet<long>();
+            var drawnConnections = new HashSet<long>(_treeData.Nodes.Count * 2);
 
             // Expanded viewport for connections (generous margin for arcs)
             var connMargin = 1000f;
@@ -916,8 +1163,8 @@ public class SkillTreeCanvas : Control
                 }
             }
 
-            canvas.DrawPath(unallocatedPath, unallocatedPaint);
-            canvas.DrawPath(allocatedPath, allocatedPaint);
+            canvas.DrawPath(unallocatedPath, s_connectionUnallocatedPaint);
+            canvas.DrawPath(allocatedPath, s_connectionAllocatedPaint);
         }
 
         private void AddArcConnection(SKPath path, PassiveNode nodeA, PassiveNode nodeB)
@@ -950,27 +1197,6 @@ public class SkillTreeCanvas : Control
 
         private void DrawNodes(SKCanvas canvas, bool useSprites, SKPaint? bitmapPaint = null)
         {
-            using var allocatedPaint = new SKPaint
-            {
-                Color = new SKColor(200, 150, 50),
-                Style = SKPaintStyle.Fill,
-                IsAntialias = true
-            };
-
-            using var unallocatedPaint = new SKPaint
-            {
-                Color = new SKColor(60, 60, 60),
-                Style = SKPaintStyle.Fill,
-                IsAntialias = true
-            };
-
-            using var masteryPaint = new SKPaint
-            {
-                Color = new SKColor(100, 80, 120),
-                Style = SKPaintStyle.Fill,
-                IsAntialias = true
-            };
-
             // Node margin for culling (largest sprite ~50 world units)
             var nodeMargin = 100f;
             var nodeRect = SKRect.Create(
@@ -985,7 +1211,7 @@ public class SkillTreeCanvas : Control
                 var x = node.CalculatedX.Value;
                 var y = node.CalculatedY.Value;
 
-                // Frustum culling — skip nodes outside visible area
+                // Frustum culling -- skip nodes outside visible area
                 if (x < nodeRect.Left || x > nodeRect.Right ||
                     y < nodeRect.Top || y > nodeRect.Bottom)
                     continue;
@@ -1022,7 +1248,7 @@ public class SkillTreeCanvas : Control
                 else if (node.IsMastery) radius = 25f;
                 else radius = 9f;
 
-                var paint = node.IsMastery ? masteryPaint : (isAllocated ? allocatedPaint : unallocatedPaint);
+                var paint = node.IsMastery ? s_masteryPaint : (isAllocated ? s_nodeAllocatedPaint : s_nodeUnallocatedPaint);
                 canvas.DrawCircle(x, y, radius, paint);
             }
         }
@@ -1182,31 +1408,6 @@ public class SkillTreeCanvas : Control
             if (_highlightedNodeIds == null || _highlightedNodeIds.Count == 0)
                 return;
 
-            using var highlightPaint = new SKPaint
-            {
-                Color = new SKColor(100, 200, 255, 160),
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 4,
-                IsAntialias = true
-            };
-
-            using var focusPaint = new SKPaint
-            {
-                Color = new SKColor(100, 255, 200, 220),
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 6,
-                IsAntialias = true
-            };
-
-            using var glowPaint = new SKPaint
-            {
-                Color = new SKColor(100, 255, 200, 60),
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 14,
-                IsAntialias = true,
-                MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6)
-            };
-
             foreach (var nodeId in _highlightedNodeIds)
             {
                 if (!_treeData.Nodes.TryGetValue(nodeId, out var node))
@@ -1227,12 +1428,12 @@ public class SkillTreeCanvas : Control
 
                 if (isFocused)
                 {
-                    canvas.DrawCircle(x, y, radius + 6, glowPaint);
-                    canvas.DrawCircle(x, y, radius, focusPaint);
+                    canvas.DrawCircle(x, y, radius + 6, s_glowPaint);
+                    canvas.DrawCircle(x, y, radius, s_focusPaint);
                 }
                 else
                 {
-                    canvas.DrawCircle(x, y, radius, highlightPaint);
+                    canvas.DrawCircle(x, y, radius, s_highlightPaint);
                 }
             }
         }

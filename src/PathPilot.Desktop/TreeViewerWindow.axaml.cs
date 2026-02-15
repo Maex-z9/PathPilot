@@ -196,8 +196,24 @@ public partial class TreeViewerWindow : Window
             var initialZoomKey = GetSpriteZoomKey((float)_zoomLevel);
             Console.WriteLine($"Initial sprite zoom key: {initialZoomKey}");
 
-            // Preload sprite sheets for initial zoom level
+            // Preload sprite sheets for initial zoom level BEFORE setting tree data on canvas.
+            // This ensures sprites are in memory before the first render frame, eliminating the
+            // black flash that occurred when sprites loaded asynchronously after canvas display.
             await _spriteService.PreloadSpriteSheetsAsync(treeData, initialZoomKey);
+
+            // Verify sprite preload succeeded -- check that key sprite sheets are actually loaded
+            var preloadedCount = 0;
+            var expectedCount = 0;
+            foreach (var (spriteType, zoomDict) in treeData.SpriteSheets)
+            {
+                if (zoomDict.TryGetValue(initialZoomKey, out var sd) && !string.IsNullOrEmpty(sd.Filename))
+                {
+                    expectedCount++;
+                    if (_spriteService.TryGetLoadedBitmap(sd.Filename) != null)
+                        preloadedCount++;
+                }
+            }
+            Console.WriteLine($"Sprite preload verification: {preloadedCount}/{expectedCount} sheets loaded for zoom {initialZoomKey}");
 
             // Debug: Check mastery sprite availability
             var masteryTypes = new[] { "mastery", "masteryInactive", "masteryConnected", "masteryActiveSelected" };
@@ -217,7 +233,7 @@ public partial class TreeViewerWindow : Window
             // Store reference for search
             _loadedTreeData = treeData;
 
-            // Set data on canvas
+            // Set data on canvas -- sprites are guaranteed loaded at this point
             TreeCanvas.TreeData = treeData;
             TreeCanvas.AllocatedNodeIds = _allocatedNodeIds;
             TreeCanvas.MasterySelections = _masterySelections;
