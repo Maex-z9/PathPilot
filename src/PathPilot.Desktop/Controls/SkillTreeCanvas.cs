@@ -1079,20 +1079,20 @@ public class SkillTreeCanvas : Control
 
                 if (group.Background.IsHalfImage)
                 {
-                    // Half-image sprites contain the BOTTOM half of a vertically symmetric pattern.
-                    // Draw the sprite below center, then mirror vertically above center.
+                    // Half-image sprites contain the TOP half of a vertically symmetric circle.
+                    // Draw original as top half, then vertically mirror for the bottom half.
                     var spriteH = coord.H * _spriteScale;
 
-                    // Bottom half: from group center downward
-                    var bottomDest = new SKRect(group.X - halfW, group.Y, group.X + halfW, group.Y + spriteH);
-                    canvas.DrawBitmap(bgBitmap, srcRect, bottomDest, bitmapPaint);
+                    // Top half: from (groupY - spriteH) to groupY
+                    var topDest = new SKRect(group.X - halfW, group.Y - spriteH, group.X + halfW, group.Y);
+                    canvas.DrawBitmap(bgBitmap, srcRect, topDest, bitmapPaint);
 
-                    // Top half: vertical mirror around group.Y
+                    // Bottom half: vertical mirror around group.Y
                     canvas.Save();
                     canvas.Translate(0, group.Y);
                     canvas.Scale(1, -1);
                     canvas.Translate(0, -group.Y);
-                    canvas.DrawBitmap(bgBitmap, srcRect, bottomDest, bitmapPaint);
+                    canvas.DrawBitmap(bgBitmap, srcRect, topDest, bitmapPaint);
                     canvas.Restore();
                 }
                 else
