@@ -150,7 +150,7 @@ namespace PathPilot.Core.Parsers
             return linkGroup;
         }
 
-        private Gem ParseGem(XElement gemElement, string linkGroupKey, int indexInGroup, int mainActiveSkillIndex)
+        private Gem? ParseGem(XElement gemElement, string linkGroupKey, int indexInGroup, int mainActiveSkillIndex)
         {
             var gemName = gemElement.Attribute("nameSpec")?.Value 
                 ?? gemElement.Attribute("skillId")?.Value
@@ -306,7 +306,7 @@ namespace PathPilot.Core.Parsers
             return itemSet;
         }
 
-        private Item ParseItem(XElement itemElement)
+        private Item? ParseItem(XElement itemElement)
         {
             var id = itemElement.Attribute("id")?.Value ?? "Unknown";
             var itemText = itemElement.Value?.Trim();
@@ -472,7 +472,7 @@ namespace PathPilot.Core.Parsers
             };
         }
 
-        private bool ParseBoolAttribute(XAttribute attribute, bool defaultValue)
+        private bool ParseBoolAttribute(XAttribute? attribute, bool defaultValue)
         {
             if (attribute == null)
                 return defaultValue;
