@@ -52,7 +52,10 @@ jobs:
         shell: pwsh
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
-        run: iscc "/DMyAppVersion=${env:VERSION}" build/installer.iss
+        run: |
+          iscc "/DMyAppVersion=${env:VERSION}" "/Obuild/output" build/installer.iss
+          Write-Host "Installer output:"
+          Get-ChildItem build/output/ -Recurse
 
       - name: Generate checksums
         shell: pwsh
