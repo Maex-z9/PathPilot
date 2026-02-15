@@ -33,6 +33,26 @@ public class SkillTreeSpriteService : IDisposable
     }
 
     /// <summary>
+    /// Synchronously gets an already-loaded sprite sheet from in-memory cache.
+    /// Returns null if not yet loaded. Use this in render loops to avoid blocking.
+    /// </summary>
+    public SKBitmap? TryGetLoadedBitmap(string fullUrl)
+    {
+        if (string.IsNullOrEmpty(fullUrl))
+            return null;
+
+        var filename = ExtractFilename(fullUrl);
+        if (string.IsNullOrEmpty(filename))
+            return null;
+
+        lock (_loadedBitmaps)
+        {
+            _loadedBitmaps.TryGetValue(filename, out var cached);
+            return cached;
+        }
+    }
+
+    /// <summary>
     /// Gets a sprite sheet bitmap from cache or downloads it
     /// </summary>
     /// <param name="fullUrl">Full URL from JSON (e.g. https://web.poecdn.com/image/passive-skill/skills-0.jpg?511ee3db)</param>

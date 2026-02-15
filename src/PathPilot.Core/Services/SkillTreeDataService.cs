@@ -208,6 +208,25 @@ public class SkillTreeDataService
         if (element.TryGetProperty("icon", out var icon))
             node.Icon = icon.GetString();
 
+        // Mastery effects (selectable stat bonuses on mastery nodes)
+        if (element.TryGetProperty("masteryEffects", out var effects))
+        {
+            foreach (var effectElement in effects.EnumerateArray())
+            {
+                var me = new MasteryEffect();
+                if (effectElement.TryGetProperty("effect", out var effectId))
+                    me.EffectId = effectId.GetInt32();
+                if (effectElement.TryGetProperty("stats", out var effectStats))
+                {
+                    me.Stats = effectStats.EnumerateArray()
+                        .Select(s => s.GetString() ?? "")
+                        .Where(s => !string.IsNullOrEmpty(s))
+                        .ToList();
+                }
+                node.MasteryEffects.Add(me);
+            }
+        }
+
         return node;
     }
 
@@ -247,12 +266,13 @@ public class SkillTreeDataService
 
     private void ParseSprites(JsonElement spritesElement, SkillTreeData treeData)
     {
-        // Sprite types we need for Phase 5
         var spriteTypes = new[]
         {
             "normalActive", "normalInactive",
             "notableActive", "notableInactive",
             "keystoneActive", "keystoneInactive",
+            "mastery", "masteryConnected", "masteryActiveSelected",
+            "masteryInactive", "masteryActiveEffect",
             "frame", "jewel", "groupBackground"
         };
 

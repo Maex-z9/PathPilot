@@ -1,7 +1,19 @@
 namespace PathPilot.Core.Parsers;
 
 /// <summary>
-/// Decodes PoE passive skill tree URLs to extract allocated node IDs.
+/// Result of decoding a PoE passive skill tree URL.
+/// </summary>
+public class TreeDecodeResult
+{
+    public List<int> AllocatedNodes { get; set; } = new();
+    /// <summary>
+    /// Mastery selections: nodeId → effectId
+    /// </summary>
+    public Dictionary<int, int> MasterySelections { get; set; } = new();
+}
+
+/// <summary>
+/// Decodes PoE passive skill tree URLs to extract allocated node IDs and mastery selections.
 /// Based on PathOfBuilding PassiveSpec.lua DecodeURL function.
 /// </summary>
 public static class TreeUrlDecoder
@@ -9,12 +21,20 @@ public static class TreeUrlDecoder
     /// <summary>
     /// Extracts allocated node IDs from a passive skill tree URL.
     /// </summary>
-    /// <param name="treeUrl">The tree URL (pathofexile.com or pobb.in format)</param>
-    /// <returns>List of allocated node IDs</returns>
     public static List<int> DecodeAllocatedNodes(string treeUrl)
     {
+        return DecodeTreeUrl(treeUrl).AllocatedNodes;
+    }
+
+    /// <summary>
+    /// Full decode: allocated nodes + mastery selections.
+    /// </summary>
+    public static TreeDecodeResult DecodeTreeUrl(string treeUrl)
+    {
+        var result = new TreeDecodeResult();
+
         if (string.IsNullOrWhiteSpace(treeUrl))
-            return new List<int>();
+            return result;
 
         try
         {
@@ -34,7 +54,7 @@ public static class TreeUrlDecoder
             if (bytes.Length < 6)
             {
                 Console.WriteLine($"Tree URL too short: {bytes.Length} bytes");
-                return new List<int>();
+                return result;
             }
 
             // Version (4 bytes, big endian)
@@ -43,7 +63,7 @@ public static class TreeUrlDecoder
             if (version > 6)
             {
                 Console.WriteLine($"Unsupported tree version: {version}");
-                return new List<int>();
+                return result;
             }
 
             // Class ID (byte 4)
@@ -53,46 +73,84 @@ public static class TreeUrlDecoder
             var ascendancyId = version >= 4 ? bytes[5] : 0;
 
             // Determine where nodes start and how many there are
-            // Note: PoB uses 1-indexed Lua, so b:byte(7) = bytes[6] in C#
+            // PoB Lua (1-indexed): b:byte(7) = C# bytes[6] = nodeCount
+            // nodesStart = Lua 8 = C# 7
             int nodesStart;
             int nodeCount;
 
-            if (version >= 5)
+            if (version >= 4)
             {
-                // Version 5+: Lua byte 7 (C# index 6) is node count, nodes start at Lua byte 8 (C# index 7)
-                nodesStart = 7;
-                nodeCount = bytes.Length >= 7 ? bytes[6] : 0;
-            }
-            else if (version >= 4)
-            {
-                // Version 4: Lua byte 7 (C# index 6) is node count, nodes start at Lua byte 8 (C# index 7)
                 nodesStart = 7;
                 nodeCount = bytes.Length >= 7 ? bytes[6] : 0;
             }
             else
             {
-                // Older versions: all remaining bytes are nodes
                 nodesStart = 6;
                 nodeCount = (bytes.Length - 6) / 2;
             }
 
-            // Decode nodes (2 bytes per node ID, big endian)
-            var nodes = new List<int>();
+            // Decode regular nodes (2 bytes per node ID, big endian)
             for (int i = 0; i < nodeCount && (nodesStart + i * 2 + 1) < bytes.Length; i++)
             {
                 var offset = nodesStart + i * 2;
                 var nodeId = (bytes[offset] << 8) | bytes[offset + 1];
                 if (nodeId > 0)
-                    nodes.Add(nodeId);
+                    result.AllocatedNodes.Add(nodeId);
             }
 
-            Console.WriteLine($"Decoded tree URL: version={version}, class={classId}, ascendancy={ascendancyId}, nodes={nodes.Count}");
-            return nodes;
+            Console.WriteLine($"Decoded tree URL: version={version}, class={classId}, ascendancy={ascendancyId}, nodes={result.AllocatedNodes.Count}");
+
+            // Version 5+: cluster jewel nodes after regular nodes
+            if (version >= 5)
+            {
+                int clusterCountIndex = nodesStart + nodeCount * 2;
+                if (clusterCountIndex < bytes.Length)
+                {
+                    int clusterCount = bytes[clusterCountIndex];
+                    int clusterStart = clusterCountIndex + 1;
+
+                    for (int i = 0; i < clusterCount && (clusterStart + i * 2 + 1) < bytes.Length; i++)
+                    {
+                        var offset = clusterStart + i * 2;
+                        var nodeId = (bytes[offset] << 8) | bytes[offset + 1];
+                        if (nodeId > 0)
+                            result.AllocatedNodes.Add(nodeId);
+                    }
+
+                    Console.WriteLine($"Decoded {clusterCount} cluster nodes");
+
+                    // Version 6+: mastery selections after cluster nodes
+                    if (version >= 6)
+                    {
+                        int masteryCountIndex = clusterStart + clusterCount * 2;
+                        if (masteryCountIndex < bytes.Length)
+                        {
+                            int masteryCount = bytes[masteryCountIndex];
+                            int masteryDataStart = masteryCountIndex + 1;
+
+                            // Each mastery: effectId (2 bytes) + nodeId (2 bytes) = 4 bytes
+                            for (int i = 0; i < masteryCount && (masteryDataStart + i * 4 + 3) < bytes.Length; i++)
+                            {
+                                var offset = masteryDataStart + i * 4;
+                                var effectId = (bytes[offset] << 8) | bytes[offset + 1];
+                                var masteryNodeId = (bytes[offset + 2] << 8) | bytes[offset + 3];
+
+                                if (masteryNodeId > 0 && effectId > 0)
+                                    result.MasterySelections[masteryNodeId] = effectId;
+                            }
+
+                            Console.WriteLine($"Decoded {result.MasterySelections.Count} mastery selections");
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to decode tree URL: {ex.Message}");
-            return new List<int>();
+            return result;
         }
     }
 }

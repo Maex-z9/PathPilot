@@ -19,8 +19,9 @@ public partial class TreeViewerWindow : Window
     private readonly SkillTreeDataService _treeDataService;
     private readonly SkillTreeSpriteService _spriteService;
     private HashSet<int> _allocatedNodeIds = new();
+    private Dictionary<int, int> _masterySelections = new();
     private string _treeUrl = string.Empty;
-    private double _zoomLevel = 0.4; // Reasonable starting zoom
+    private double _zoomLevel = 0.15; // Match CenterOnAllocatedNodes default
     private const double ZoomStep = 0.05;
     private const double MinZoom = 0.02;
     private const double MaxZoom = 2.0;
@@ -44,9 +45,10 @@ public partial class TreeViewerWindow : Window
         // (Stored allocatedNodes may have been decoded with buggy older code)
         if (!string.IsNullOrEmpty(treeUrl))
         {
-            var decodedNodes = TreeUrlDecoder.DecodeAllocatedNodes(treeUrl);
-            _allocatedNodeIds = new HashSet<int>(decodedNodes);
-            Console.WriteLine($"TreeViewer decoded {decodedNodes.Count} nodes from URL");
+            var decoded = TreeUrlDecoder.DecodeTreeUrl(treeUrl);
+            _allocatedNodeIds = new HashSet<int>(decoded.AllocatedNodes);
+            _masterySelections = decoded.MasterySelections;
+            Console.WriteLine($"TreeViewer decoded {decoded.AllocatedNodes.Count} nodes, {decoded.MasterySelections.Count} mastery selections from URL");
         }
         else
         {
@@ -120,9 +122,25 @@ public partial class TreeViewerWindow : Window
             // Preload sprite sheets for initial zoom level
             await _spriteService.PreloadSpriteSheetsAsync(treeData, initialZoomKey);
 
+            // Debug: Check mastery sprite availability
+            var masteryTypes = new[] { "mastery", "masteryInactive", "masteryConnected", "masteryActiveSelected" };
+            foreach (var mt in masteryTypes)
+            {
+                if (treeData.SpriteSheets.TryGetValue(mt, out var zd) && zd.TryGetValue(initialZoomKey, out var sd))
+                {
+                    var bitmap = _spriteService.TryGetLoadedBitmap(sd.Filename);
+                    Console.WriteLine($"Mastery sprite '{mt}': {sd.Coords.Count} coords, filename={sd.Filename}, loaded={bitmap != null}");
+                }
+                else
+                {
+                    Console.WriteLine($"Mastery sprite '{mt}': NOT FOUND in SpriteSheets for zoom {initialZoomKey}");
+                }
+            }
+
             // Set data on canvas
             TreeCanvas.TreeData = treeData;
             TreeCanvas.AllocatedNodeIds = _allocatedNodeIds;
+            TreeCanvas.MasterySelections = _masterySelections;
             TreeCanvas.SetSpriteService(_spriteService);
 
             Console.WriteLine($"Tree loaded: {treeData.TotalNodes} nodes, {_allocatedNodeIds.Count} allocated");

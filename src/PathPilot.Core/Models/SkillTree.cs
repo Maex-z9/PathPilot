@@ -113,6 +113,12 @@ public class PassiveNode
     /// </summary>
     public string? Icon { get; set; }
 
+    /// <summary>
+    /// Available mastery effects (for mastery nodes only).
+    /// Each entry has an effect ID and stat descriptions.
+    /// </summary>
+    public List<MasteryEffect> MasteryEffects { get; set; } = new();
+
     // Position data for tree rendering
     public int? Group { get; set; }
     public int? Orbit { get; set; }
@@ -128,6 +134,15 @@ public class PassiveNode
     /// Calculated Y position (set during rendering)
     /// </summary>
     public float? CalculatedY { get; set; }
+}
+
+/// <summary>
+/// A selectable mastery effect on a mastery node
+/// </summary>
+public class MasteryEffect
+{
+    public int EffectId { get; set; }
+    public List<string> Stats { get; set; } = new();
 }
 
 /// <summary>
