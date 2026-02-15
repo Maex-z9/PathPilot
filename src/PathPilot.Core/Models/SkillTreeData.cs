@@ -24,6 +24,17 @@ public class SkillTreeData
     /// Total node count for validation
     /// </summary>
     public int TotalNodes => Nodes.Count;
+
+    /// <summary>
+    /// Sprite sheets organized by type and zoom level
+    /// Key: sprite type (e.g. "normalActive"), Value: dict keyed by zoom string (e.g. "0.1246")
+    /// </summary>
+    public Dictionary<string, Dictionary<string, SpriteSheetData>> SpriteSheets { get; set; } = new();
+
+    /// <summary>
+    /// Parsed imageZoomLevels from JSON
+    /// </summary>
+    public List<float> ImageZoomLevels { get; set; } = new();
 }
 
 /// <summary>
@@ -36,4 +47,5 @@ public class NodeGroup
     public float Y { get; set; }
     public List<int> NodeIds { get; set; } = new();
     public bool IsProxy { get; set; }
+    public GroupBackground? Background { get; set; }
 }

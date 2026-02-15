@@ -126,6 +126,34 @@ public class SkillTreeDataService
             }
         }
 
+        // Parse imageZoomLevels
+        if (root.TryGetProperty("imageZoomLevels", out var zoomLevels))
+        {
+            treeData.ImageZoomLevels = zoomLevels.EnumerateArray()
+                .Select(z => z.GetSingle())
+                .ToList();
+        }
+
+        // Parse sprites section
+        if (root.TryGetProperty("sprites", out var spritesElement))
+        {
+            ParseSprites(spritesElement, treeData);
+        }
+
+        // Log sprite parsing results
+        Console.WriteLine($"Sprite parsing complete:");
+        Console.WriteLine($"  Sprite types: {treeData.SpriteSheets.Count}");
+        foreach (var (spriteType, zoomDict) in treeData.SpriteSheets)
+        {
+            Console.WriteLine($"    {spriteType}: {zoomDict.Count} zoom levels");
+        }
+
+        // Count nodes with icons and groups with backgrounds
+        var nodesWithIcons = treeData.Nodes.Values.Count(n => !string.IsNullOrEmpty(n.Icon));
+        var groupsWithBackgrounds = treeData.Groups.Values.Count(g => g.Background != null);
+        Console.WriteLine($"  Nodes with icons: {nodesWithIcons}");
+        Console.WriteLine($"  Groups with backgrounds: {groupsWithBackgrounds}");
+
         return treeData;
     }
 
@@ -176,6 +204,10 @@ public class SkillTreeDataService
             node.IsAscendancy = true;
         }
 
+        // Icon sprite key
+        if (element.TryGetProperty("icon", out var icon))
+            node.Icon = icon.GetString();
+
         return node;
     }
 
@@ -200,6 +232,80 @@ public class SkillTreeDataService
                 .ToList();
         }
 
+        // Background
+        if (element.TryGetProperty("background", out var bgElement))
+        {
+            group.Background = new GroupBackground
+            {
+                Image = bgElement.GetProperty("image").GetString() ?? "",
+                IsHalfImage = bgElement.TryGetProperty("isHalfImage", out var half) && half.GetBoolean()
+            };
+        }
+
         return group;
+    }
+
+    private void ParseSprites(JsonElement spritesElement, SkillTreeData treeData)
+    {
+        // Sprite types we need for Phase 5
+        var spriteTypes = new[]
+        {
+            "normalActive", "normalInactive",
+            "notableActive", "notableInactive",
+            "keystoneActive", "keystoneInactive",
+            "frame", "jewel", "groupBackground"
+        };
+
+        foreach (var spriteType in spriteTypes)
+        {
+            if (!spritesElement.TryGetProperty(spriteType, out var typeElement))
+                continue;
+
+            var zoomDict = new Dictionary<string, SpriteSheetData>();
+
+            foreach (var zoomProp in typeElement.EnumerateObject())
+            {
+                var zoomKey = zoomProp.Name; // e.g. "0.3835"
+                var sheetElement = zoomProp.Value;
+
+                var sheetData = new SpriteSheetData();
+
+                if (sheetElement.TryGetProperty("filename", out var filename))
+                    sheetData.Filename = filename.GetString() ?? "";
+
+                if (sheetElement.TryGetProperty("w", out var w))
+                    sheetData.SheetWidth = w.GetInt32();
+
+                if (sheetElement.TryGetProperty("h", out var h))
+                    sheetData.SheetHeight = h.GetInt32();
+
+                // Parse coords
+                if (sheetElement.TryGetProperty("coords", out var coordsElement))
+                {
+                    foreach (var coordProp in coordsElement.EnumerateObject())
+                    {
+                        var coordKey = coordProp.Name; // e.g. "Art/2DArt/SkillIcons/passives/2handeddamage.png"
+                        var coordElement = coordProp.Value;
+
+                        var coord = new SpriteCoordinate();
+
+                        if (coordElement.TryGetProperty("x", out var x))
+                            coord.X = x.GetInt32();
+                        if (coordElement.TryGetProperty("y", out var y))
+                            coord.Y = y.GetInt32();
+                        if (coordElement.TryGetProperty("w", out var cw))
+                            coord.W = cw.GetInt32();
+                        if (coordElement.TryGetProperty("h", out var ch))
+                            coord.H = ch.GetInt32();
+
+                        sheetData.Coords[coordKey] = coord;
+                    }
+                }
+
+                zoomDict[zoomKey] = sheetData;
+            }
+
+            treeData.SpriteSheets[spriteType] = zoomDict;
+        }
     }
 }

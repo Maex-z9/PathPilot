@@ -108,6 +108,11 @@ public class PassiveNode
     public bool IsJewelSocket { get; set; }
     public bool IsMastery { get; set; }
 
+    /// <summary>
+    /// Icon sprite key (e.g. "Art/2DArt/SkillIcons/passives/2handeddamage.png")
+    /// </summary>
+    public string? Icon { get; set; }
+
     // Position data for tree rendering
     public int? Group { get; set; }
     public int? Orbit { get; set; }
