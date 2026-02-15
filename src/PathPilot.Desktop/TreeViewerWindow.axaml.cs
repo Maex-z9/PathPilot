@@ -1,6 +1,8 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -27,6 +29,11 @@ public partial class TreeViewerWindow : Window
     private const double MaxZoom = 2.0;
     private Build? _build;
     private bool _suppressSelectionChanged;
+
+    // Search state
+    private DispatcherTimer? _searchDebounceTimer;
+    private List<(int NodeId, string Display, string Name)> _searchResults = new();
+    private SkillTreeData? _loadedTreeData;
 
     public TreeViewerWindow()
     {
@@ -112,6 +119,8 @@ public partial class TreeViewerWindow : Window
     {
         if (string.IsNullOrEmpty(treeSet.TreeUrl))
             return;
+
+        ClearSearch();
 
         _treeUrl = treeSet.TreeUrl;
         TreeTitleText.Text = $"Skill Tree - {treeSet.Title}";
@@ -205,6 +214,9 @@ public partial class TreeViewerWindow : Window
                 }
             }
 
+            // Store reference for search
+            _loadedTreeData = treeData;
+
             // Set data on canvas
             TreeCanvas.TreeData = treeData;
             TreeCanvas.AllocatedNodeIds = _allocatedNodeIds;
@@ -277,5 +289,122 @@ public partial class TreeViewerWindow : Window
         if (currentZoom < 0.2540f) return "0.2109";
         if (currentZoom < 0.3403f) return "0.2972";
         return "0.3835";
+    }
+
+    // --- Node Search ---
+
+    private void SearchBox_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        _searchDebounceTimer?.Stop();
+        _searchDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+        _searchDebounceTimer.Tick += (_, _) =>
+        {
+            _searchDebounceTimer.Stop();
+            PerformSearch();
+        };
+        _searchDebounceTimer.Start();
+    }
+
+    private void SearchBox_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            ClearSearch();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter)
+        {
+            if (_searchResults.Count > 0)
+            {
+                NavigateToSearchResult(0);
+                SearchPopup.IsOpen = false;
+            }
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Down && SearchPopup.IsOpen)
+        {
+            SearchResultsList.Focus();
+            if (SearchResultsList.ItemCount > 0)
+                SearchResultsList.SelectedIndex = 0;
+            e.Handled = true;
+        }
+    }
+
+    private void PerformSearch()
+    {
+        var query = SearchBox.Text?.Trim();
+        if (string.IsNullOrEmpty(query) || _loadedTreeData == null)
+        {
+            SearchPopup.IsOpen = false;
+            TreeCanvas.HighlightedNodeIds = null;
+            TreeCanvas.ClearFocusedNode();
+            _searchResults.Clear();
+            return;
+        }
+
+        var matches = _loadedTreeData.Nodes.Values
+            .Where(n => !n.IsClassStart
+                && !string.IsNullOrEmpty(n.Name)
+                && n.CalculatedX.HasValue
+                && n.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(n => n.Name.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(n => n.Name.Length)
+            .Take(20)
+            .Select(n =>
+            {
+                string type = n.IsKeystone ? "Keystone"
+                    : n.IsNotable ? "Notable"
+                    : n.IsJewelSocket ? "Jewel Socket"
+                    : n.IsMastery ? "Mastery"
+                    : "Passive";
+                return (n.Id, Display: $"{n.Name}  [{type}]", n.Name);
+            })
+            .ToList();
+
+        _searchResults = matches;
+        SearchResultsList.ItemsSource = matches.Select(m => m.Display).ToList();
+
+        if (matches.Count > 0)
+        {
+            SearchPopup.IsOpen = true;
+            TreeCanvas.HighlightedNodeIds = new HashSet<int>(matches.Select(m => m.Id));
+        }
+        else
+        {
+            SearchPopup.IsOpen = false;
+            TreeCanvas.HighlightedNodeIds = null;
+        }
+
+        TreeCanvas.ClearFocusedNode();
+    }
+
+    private void SearchResultsList_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var index = SearchResultsList.SelectedIndex;
+        if (index >= 0 && index < _searchResults.Count)
+        {
+            NavigateToSearchResult(index);
+            SearchPopup.IsOpen = false;
+        }
+    }
+
+    private void NavigateToSearchResult(int index)
+    {
+        if (index < 0 || index >= _searchResults.Count)
+            return;
+
+        var nodeId = _searchResults[index].NodeId;
+        TreeCanvas.NavigateToNode(nodeId);
+        UpdateZoomDisplay();
+    }
+
+    private void ClearSearch()
+    {
+        _searchDebounceTimer?.Stop();
+        SearchBox.Text = string.Empty;
+        SearchPopup.IsOpen = false;
+        _searchResults.Clear();
+        TreeCanvas.HighlightedNodeIds = null;
+        TreeCanvas.ClearFocusedNode();
     }
 }

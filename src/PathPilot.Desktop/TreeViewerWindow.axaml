@@ -10,7 +10,7 @@
         <!-- Header -->
         <Border Grid.Row="0" Background="#1a1816" Padding="15,10"
                 BorderBrush="#33c8aa6e" BorderThickness="0,0,0,1">
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
                     <TextBlock Name="TreeTitleText"
                                Text="Passive Skill Tree"
@@ -28,7 +28,15 @@
                               SelectionChanged="TreeSetSelector_SelectionChanged"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                            HorizontalAlignment="Right" VerticalAlignment="Center" Margin="15,0">
+                    <TextBox Name="SearchBox" Watermark="Search nodes..."
+                             Width="220" Background="#2a2520" Foreground="#e0d6c2"
+                             BorderBrush="#5a4f3d" FontSize="13" VerticalAlignment="Center"
+                             TextChanged="SearchBox_TextChanged" KeyDown="SearchBox_KeyDown"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
                     <Button Name="ZoomOutButton"
                             Content="&#x2212;"
                             Click="ZoomOutButton_Click"
@@ -76,6 +84,16 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <Popup Name="SearchPopup" PlacementTarget="{Binding #SearchBox}"
+               Placement="Bottom" IsLightDismissEnabled="True" MaxHeight="300"
+               Grid.Row="0">
+            <Border Background="#1a1816" BorderBrush="#5a4f3d" BorderThickness="1" CornerRadius="4">
+                <ListBox Name="SearchResultsList" Background="Transparent"
+                         Foreground="#e0d6c2" MaxHeight="290"
+                         SelectionChanged="SearchResultsList_SelectionChanged"/>
+            </Border>
+        </Popup>
 
         <!-- Native Tree Canvas -->
         <Border Grid.Row="1" Background="#0a0908" ClipToBounds="True">

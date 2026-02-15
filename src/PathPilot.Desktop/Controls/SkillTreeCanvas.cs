@@ -35,6 +35,9 @@ public class SkillTreeCanvas : Control
     public static readonly StyledProperty<Dictionary<int, int>?> MasterySelectionsProperty =
         AvaloniaProperty.Register<SkillTreeCanvas, Dictionary<int, int>?>(nameof(MasterySelections));
 
+    public static readonly StyledProperty<HashSet<int>?> HighlightedNodeIdsProperty =
+        AvaloniaProperty.Register<SkillTreeCanvas, HashSet<int>?>(nameof(HighlightedNodeIds));
+
     public static readonly StyledProperty<IBrush?> BackgroundProperty =
         AvaloniaProperty.Register<SkillTreeCanvas, IBrush?>(nameof(Background));
 
@@ -65,6 +68,12 @@ public class SkillTreeCanvas : Control
         set => SetValue(MasterySelectionsProperty, value);
     }
 
+    public HashSet<int>? HighlightedNodeIds
+    {
+        get => GetValue(HighlightedNodeIdsProperty);
+        set => SetValue(HighlightedNodeIdsProperty, value);
+    }
+
     public IBrush? Background
     {
         get => GetValue(BackgroundProperty);
@@ -79,6 +88,9 @@ public class SkillTreeCanvas : Control
 
     // Hover state
     private int? _hoveredNodeId = null;
+
+    // Search highlight state
+    private int? _focusedNodeId = null;
 
     // Zoom limits
     private const float MinZoom = 0.02f;
@@ -106,11 +118,13 @@ public class SkillTreeCanvas : Control
     private float _pictureZoom = 0f;
     private int _pictureAllocCount = -1;
     private int _pictureSpriteCount = -1;
+    private int _pictureHighlightCount = -1;
+    private int? _pictureFocusedNodeId = null;
     private string? _pictureZoomKey = null;
 
     static SkillTreeCanvas()
     {
-        AffectsRender<SkillTreeCanvas>(TreeDataProperty, AllocatedNodeIdsProperty, ZoomLevelProperty, BackgroundProperty);
+        AffectsRender<SkillTreeCanvas>(TreeDataProperty, AllocatedNodeIdsProperty, ZoomLevelProperty, BackgroundProperty, HighlightedNodeIdsProperty);
     }
 
     public void SetSpriteService(SkillTreeSpriteService spriteService)
@@ -188,6 +202,8 @@ public class SkillTreeCanvas : Control
             _cachedSpriteBitmaps,
             _cachedSpriteCoords,
             _spriteScale,
+            HighlightedNodeIds,
+            _focusedNodeId,
             this);
 
         context.Custom(operation);
@@ -550,6 +566,34 @@ public class SkillTreeCanvas : Control
         return panel;
     }
 
+    public void NavigateToNode(int nodeId)
+    {
+        if (TreeData == null || !TreeData.Nodes.TryGetValue(nodeId, out var node))
+            return;
+        if (!node.CalculatedX.HasValue || !node.CalculatedY.HasValue)
+            return;
+
+        _focusedNodeId = nodeId;
+
+        // Ensure minimum zoom so the node is visible
+        if (ZoomLevel < 0.35)
+            ZoomLevel = 0.35;
+
+        // Center viewport on node
+        _offsetX = node.CalculatedX.Value - (float)(Bounds.Width / 2 / ZoomLevel);
+        _offsetY = node.CalculatedY.Value - (float)(Bounds.Height / 2 / ZoomLevel);
+
+        _pictureIsDirty = true;
+        InvalidateVisual();
+    }
+
+    public void ClearFocusedNode()
+    {
+        _focusedNodeId = null;
+        _pictureIsDirty = true;
+        InvalidateVisual();
+    }
+
     public void CenterOnAllocatedNodes()
     {
         if (AllocatedNodeIds == null || AllocatedNodeIds.Count == 0 || TreeData == null)
@@ -629,6 +673,8 @@ public class SkillTreeCanvas : Control
         private readonly Dictionary<string, SKBitmap> _spriteBitmaps;
         private readonly Dictionary<string, SpriteSheetData> _spriteCoords;
         private readonly float _spriteScale;
+        private readonly HashSet<int>? _highlightedNodeIds;
+        private readonly int? _focusedNodeId;
         private readonly SkillTreeCanvas _owner;
 
         // Orbit constants (match SkillTreePositionHelper)
@@ -641,7 +687,8 @@ public class SkillTreeCanvas : Control
         public SkillTreeDrawOperation(Rect bounds, SkillTreeData treeData, HashSet<int> allocatedNodeIds,
             float zoomLevel, float offsetX, float offsetY,
             Dictionary<string, SKBitmap> spriteBitmaps, Dictionary<string, SpriteSheetData> spriteCoords,
-            float spriteScale, SkillTreeCanvas owner)
+            float spriteScale, HashSet<int>? highlightedNodeIds, int? focusedNodeId,
+            SkillTreeCanvas owner)
         {
             _bounds = bounds;
             _treeData = treeData;
@@ -652,6 +699,8 @@ public class SkillTreeCanvas : Control
             _spriteBitmaps = spriteBitmaps;
             _spriteCoords = spriteCoords;
             _spriteScale = spriteScale;
+            _highlightedNodeIds = highlightedNodeIds;
+            _focusedNodeId = focusedNodeId;
             _owner = owner;
         }
 
@@ -671,11 +720,14 @@ public class SkillTreeCanvas : Control
 
             // Check if we need to rebuild the cached picture
             // All checks happen on render thread — no race conditions
+            int highlightCount = _highlightedNodeIds?.Count ?? 0;
             bool needsRebuild = _owner._pictureIsDirty
                 || _owner._cachedPicture == null
                 || _owner._pictureZoom != _zoomLevel
                 || _owner._pictureAllocCount != _allocatedNodeIds.Count
                 || _owner._pictureSpriteCount != _spriteBitmaps.Count
+                || _owner._pictureHighlightCount != highlightCount
+                || _owner._pictureFocusedNodeId != _focusedNodeId
                 || _owner._pictureZoomKey != _owner._currentSpriteZoomKey;
 
             if (needsRebuild)
@@ -702,11 +754,14 @@ public class SkillTreeCanvas : Control
                     DrawGroupBackgrounds(recordCanvas, bitmapPaint);
                 DrawConnections(recordCanvas);
                 DrawNodes(recordCanvas, useSprites, bitmapPaint);
+                DrawHighlights(recordCanvas);
 
                 _owner._cachedPicture = recorder.EndRecording();
                 _owner._pictureZoom = _zoomLevel;
                 _owner._pictureAllocCount = _allocatedNodeIds.Count;
                 _owner._pictureSpriteCount = _spriteBitmaps.Count;
+                _owner._pictureHighlightCount = highlightCount;
+                _owner._pictureFocusedNodeId = _focusedNodeId;
                 _owner._pictureZoomKey = _owner._currentSpriteZoomKey;
                 _owner._pictureIsDirty = false;
             }
@@ -1076,6 +1131,70 @@ public class SkillTreeCanvas : Control
             var destRect = new SKRect(x - halfW, y - halfH, x + halfW, y + halfH);
 
             canvas.DrawBitmap(frameBitmap, srcRect, destRect, bitmapPaint);
+        }
+
+        private void DrawHighlights(SKCanvas canvas)
+        {
+            if (_highlightedNodeIds == null || _highlightedNodeIds.Count == 0)
+                return;
+
+            using var highlightPaint = new SKPaint
+            {
+                Color = new SKColor(100, 200, 255, 160),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 4,
+                IsAntialias = true
+            };
+
+            using var focusPaint = new SKPaint
+            {
+                Color = new SKColor(100, 255, 200, 220),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 6,
+                IsAntialias = true
+            };
+
+            using var glowPaint = new SKPaint
+            {
+                Color = new SKColor(100, 255, 200, 60),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 14,
+                IsAntialias = true,
+                MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6)
+            };
+
+            foreach (var nodeId in _highlightedNodeIds)
+            {
+                if (!_treeData.Nodes.TryGetValue(nodeId, out var node))
+                    continue;
+                if (!node.CalculatedX.HasValue || !node.CalculatedY.HasValue)
+                    continue;
+
+                var x = node.CalculatedX.Value;
+                var y = node.CalculatedY.Value;
+                float radius = GetHighlightRadius(node);
+
+                bool isFocused = _focusedNodeId.HasValue && _focusedNodeId.Value == nodeId;
+
+                if (isFocused)
+                {
+                    canvas.DrawCircle(x, y, radius + 6, glowPaint);
+                    canvas.DrawCircle(x, y, radius, focusPaint);
+                }
+                else
+                {
+                    canvas.DrawCircle(x, y, radius, highlightPaint);
+                }
+            }
+        }
+
+        private float GetHighlightRadius(PassiveNode node)
+        {
+            if (node.IsKeystone) return 25f;
+            if (node.IsNotable) return 18f;
+            if (node.IsJewelSocket) return 15f;
+            if (node.IsMastery) return 25f;
+            return 9f;
         }
     }
 }
