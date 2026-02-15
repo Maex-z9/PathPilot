@@ -81,37 +81,46 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIS-01 | — | Pending |
-| VIS-02 | — | Pending |
-| VIS-03 | — | Pending |
-| VIS-04 | — | Pending |
-| VIS-05 | — | Pending |
-| TIP-01 | — | Pending |
-| TIP-02 | — | Pending |
-| SRC-01 | — | Pending |
-| SRC-02 | — | Pending |
-| SRC-03 | — | Pending |
-| SRC-04 | — | Pending |
-| EDT-01 | — | Pending |
-| EDT-02 | — | Pending |
-| EDT-03 | — | Pending |
-| EDT-04 | — | Pending |
-| EDT-05 | — | Pending |
-| EDT-06 | — | Pending |
-| EDT-07 | — | Pending |
-| MAP-01 | — | Pending |
-| MAP-02 | — | Pending |
-| MAP-03 | — | Pending |
-| MAP-04 | — | Pending |
-| ASC-01 | — | Pending |
-| ASC-02 | — | Pending |
-| ASC-03 | — | Pending |
+| VIS-01 | Phase 5 | Pending |
+| VIS-02 | Phase 5 | Pending |
+| VIS-03 | Phase 5 | Pending |
+| VIS-04 | Phase 5 | Pending |
+| VIS-05 | Phase 5 | Pending |
+| TIP-01 | Phase 6 | Pending |
+| TIP-02 | Phase 6 | Pending |
+| SRC-01 | Phase 8 | Pending |
+| SRC-02 | Phase 8 | Pending |
+| SRC-03 | Phase 8 | Pending |
+| SRC-04 | Phase 8 | Pending |
+| EDT-01 | Phase 7 | Pending |
+| EDT-02 | Phase 7 | Pending |
+| EDT-03 | Phase 7 | Pending |
+| EDT-04 | Phase 7 | Pending |
+| EDT-05 | Phase 7 | Pending |
+| EDT-06 | Phase 7 | Pending |
+| EDT-07 | Phase 7 | Pending |
+| MAP-01 | Phase 9 | Pending |
+| MAP-02 | Phase 9 | Pending |
+| MAP-03 | Phase 9 | Pending |
+| MAP-04 | Phase 9 | Pending |
+| ASC-01 | Phase 10 | Pending |
+| ASC-02 | Phase 10 | Pending |
+| ASC-03 | Phase 10 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 25 total
-- Mapped to phases: 0
-- Unmapped: 25 ⚠️
+- Mapped to phases: 25/25
+- Unmapped: 0
+
+**Coverage validation:**
+- Phase 5 (Sprite Foundation): 5 requirements (VIS-01 to VIS-05)
+- Phase 6 (Stats & Tooltips): 2 requirements (TIP-01, TIP-02)
+- Phase 7 (Node Editing): 7 requirements (EDT-01 to EDT-07)
+- Phase 8 (Node Search): 4 requirements (SRC-01 to SRC-04)
+- Phase 9 (Minimap): 4 requirements (MAP-01 to MAP-04)
+- Phase 10 (Ascendancy): 3 requirements (ASC-01 to ASC-03)
+- Total: 25/25 requirements mapped
 
 ---
 *Requirements defined: 2026-02-15*
-*Last updated: 2026-02-15 after initial definition*
+*Traceability updated: 2026-02-15 after roadmap creation*
