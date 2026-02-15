@@ -8,9 +8,19 @@ PathPilot ist eine Desktop-App für Path of Exile Build-Guides. Sie importiert B
 
 Flüssiges Rendering von ~1300 Nodes mit klarer Allocated-Markierung und natürlicher Zoom/Pan-Navigation.
 
-## Current State (v1.0 shipped)
+## Current Milestone: v1.1 Skill Tree Overhaul
 
-**Shipped 2026-02-04:** Native Skill Tree Viewer
+**Goal:** Den Skill Tree Viewer visuell und funktional auf das Niveau der GGG Website / Path of Building bringen.
+
+**Target features:**
+- Volle Grafik (Node-Icons, Hintergrundbilder, Gruppen-Grafiken, Keystones mit Rahmen)
+- Stats/Modifiers in Hover-Tooltips
+- Node-Suche mit Hervorhebung
+- Ascendancy Tree Anzeige
+- Minimap als Overlay im Tree Viewer
+- Node-Editing (Nodes per Klick allocieren/deallocieren)
+
+## Previous: v1.0 (shipped 2026-02-04)
 
 - SkiaSharp rendering (~1300 nodes at 60fps)
 - GGG JSON parsing with 7-day cache
@@ -41,13 +51,18 @@ Flüssiges Rendering von ~1300 Nodes mit klarer Allocated-Markierung und natürl
 - ✓ Zoom (Mausrad) Navigation — v1.0
 - ✓ Pan (Drag) Navigation — v1.0
 
+### Active
+
+- [ ] Volle Grafik (Node-Icons, Gruppen-Grafiken, Keystones mit Rahmen wie GGG Website)
+- [ ] Stats/Modifiers in Hover-Tooltips
+- [ ] Node-Suche mit Hervorhebung
+- [ ] Ascendancy Tree Anzeige
+- [ ] Minimap als Overlay im Tree Viewer
+- [ ] Node-Editing (Nodes per Klick allocieren/deallocieren)
+
 ### Out of Scope (v2+)
 
-- Node-Editing (klicken zum allocieren/deallocieren) — Komplexität
-- Stats/Modifiers im Hover — Benötigt zusätzliche Daten-Verarbeitung
-- Minimap für schnelle Navigation — Nice-to-have
-- Node-Suche — Nice-to-have
-- Ascendancy Tree Viewer — Separater Datenbereich
+(Aktuell leer — alle bisherigen v2+ Items in Active verschoben)
 
 ## Constraints
 
@@ -69,4 +84,4 @@ Flüssiges Rendering von ~1300 Nodes mit klarer Allocated-Markierung und natürl
 | canvas.Scale() für Zoom | RenderTransform skaliert nur visuell, nicht Koordinaten | ✓ Good |
 
 ---
-*Last updated: 2026-02-04 after v1.0 milestone*
+*Last updated: 2026-02-15 after v1.1 milestone start*
