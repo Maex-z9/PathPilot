@@ -1075,20 +1075,32 @@ public class SkillTreeCanvas : Control
                     continue;
 
                 var halfW = coord.W / 2f * _spriteScale;
-                var halfH = coord.H / 2f * _spriteScale;
                 var srcRect = new SKRect(coord.X, coord.Y, coord.X + coord.W, coord.Y + coord.H);
-                var destRect = new SKRect(group.X - halfW, group.Y - halfH, group.X + halfW, group.Y + halfH);
-
-                canvas.DrawBitmap(bgBitmap, srcRect, destRect, bitmapPaint);
 
                 if (group.Background.IsHalfImage)
                 {
+                    // Half-image sprites contain the BOTTOM half of a vertically symmetric pattern.
+                    // Draw the sprite below center, then mirror vertically above center.
+                    var spriteH = coord.H * _spriteScale;
+
+                    // Bottom half: from group center downward
+                    var bottomDest = new SKRect(group.X - halfW, group.Y, group.X + halfW, group.Y + spriteH);
+                    canvas.DrawBitmap(bgBitmap, srcRect, bottomDest, bitmapPaint);
+
+                    // Top half: vertical mirror around group.Y
                     canvas.Save();
-                    canvas.Translate(group.X, group.Y);
-                    canvas.Scale(-1, 1);
-                    canvas.Translate(-group.X, -group.Y);
-                    canvas.DrawBitmap(bgBitmap, srcRect, destRect, bitmapPaint);
+                    canvas.Translate(0, group.Y);
+                    canvas.Scale(1, -1);
+                    canvas.Translate(0, -group.Y);
+                    canvas.DrawBitmap(bgBitmap, srcRect, bottomDest, bitmapPaint);
                     canvas.Restore();
+                }
+                else
+                {
+                    // Non-half backgrounds: draw centered on group position
+                    var halfH = coord.H / 2f * _spriteScale;
+                    var destRect = new SKRect(group.X - halfW, group.Y - halfH, group.X + halfW, group.Y + halfH);
+                    canvas.DrawBitmap(bgBitmap, srcRect, destRect, bitmapPaint);
                 }
             }
         }
