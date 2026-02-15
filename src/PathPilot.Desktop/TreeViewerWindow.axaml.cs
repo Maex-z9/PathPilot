@@ -17,6 +17,7 @@ namespace PathPilot.Desktop;
 public partial class TreeViewerWindow : Window
 {
     private readonly SkillTreeDataService _treeDataService;
+    private readonly SkillTreeSpriteService _spriteService;
     private HashSet<int> _allocatedNodeIds = new();
     private string _treeUrl = string.Empty;
     private double _zoomLevel = 0.4; // Reasonable starting zoom
@@ -28,6 +29,10 @@ public partial class TreeViewerWindow : Window
     {
         InitializeComponent();
         _treeDataService = new SkillTreeDataService();
+        _spriteService = new SkillTreeSpriteService();
+
+        // Dispose sprite service when window closes
+        Closed += (s, e) => _spriteService.Dispose();
     }
 
     public TreeViewerWindow(string treeUrl, string title, List<int>? allocatedNodes = null) : this()
@@ -86,6 +91,13 @@ public partial class TreeViewerWindow : Window
                     node.CalculatedY += offsetY;
             }
 
+            // Apply same offset to group positions for background rendering
+            foreach (var group in treeData.Groups.Values)
+            {
+                group.X += offsetX;
+                group.Y += offsetY;
+            }
+
             // Debug: Count nodes with calculated positions
             var nodesWithPos = treeData.Nodes.Values.Count(n => n.CalculatedX.HasValue && n.CalculatedY.HasValue);
             Console.WriteLine($"Nodes with calculated positions: {nodesWithPos}/{treeData.TotalNodes}");
@@ -101,9 +113,17 @@ public partial class TreeViewerWindow : Window
                 Console.WriteLine($"Position range: X={minX:F0} to {maxX:F0}, Y={minY:F0} to {maxY:F0}");
             }
 
+            // Determine initial zoom key for sprite LOD
+            var initialZoomKey = GetSpriteZoomKey((float)_zoomLevel);
+            Console.WriteLine($"Initial sprite zoom key: {initialZoomKey}");
+
+            // Preload sprite sheets for initial zoom level
+            await _spriteService.PreloadSpriteSheetsAsync(treeData, initialZoomKey);
+
             // Set data on canvas
             TreeCanvas.TreeData = treeData;
             TreeCanvas.AllocatedNodeIds = _allocatedNodeIds;
+            TreeCanvas.SetSpriteService(_spriteService);
 
             Console.WriteLine($"Tree loaded: {treeData.TotalNodes} nodes, {_allocatedNodeIds.Count} allocated");
             Console.WriteLine($"Allocated node IDs (first 10): {string.Join(", ", _allocatedNodeIds.Take(10))}");
@@ -158,5 +178,18 @@ public partial class TreeViewerWindow : Window
     private void UpdateZoomDisplay()
     {
         ZoomLevelText.Text = $"{TreeCanvas.ZoomLevel * 100:F0}%";
+    }
+
+    /// <summary>
+    /// Maps current zoom level to nearest GGG sprite quality
+    /// GGG zoom thresholds: 0.1246, 0.2109, 0.2972, 0.3835
+    /// Midpoints for switching: 0.1728, 0.2540, 0.3403
+    /// </summary>
+    private static string GetSpriteZoomKey(float currentZoom)
+    {
+        if (currentZoom < 0.1728f) return "0.1246";
+        if (currentZoom < 0.2540f) return "0.2109";
+        if (currentZoom < 0.3403f) return "0.2972";
+        return "0.3835";
     }
 }

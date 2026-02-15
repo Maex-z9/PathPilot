@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -9,6 +10,7 @@ using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
 using PathPilot.Core.Models;
+using PathPilot.Core.Services;
 using SkiaSharp;
 
 namespace PathPilot.Desktop.Controls;
@@ -82,10 +84,36 @@ public class SkillTreeCanvas : Control
     // Debug flag to only log bounds once
     private bool _boundsLogged = false;
 
+    // Sprite service for rendering
+    private SkillTreeSpriteService? _spriteService = null;
+    private string _currentSpriteZoomKey = "0.3835"; // Default to highest quality
+
     static SkillTreeCanvas()
     {
         // Trigger redraw when properties change
         AffectsRender<SkillTreeCanvas>(TreeDataProperty, AllocatedNodeIdsProperty, ZoomLevelProperty, BackgroundProperty);
+    }
+
+    /// <summary>
+    /// Sets the sprite service for sprite-based rendering
+    /// </summary>
+    public void SetSpriteService(SkillTreeSpriteService spriteService)
+    {
+        _spriteService = spriteService;
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Maps current zoom level to nearest GGG sprite quality
+    /// GGG zoom thresholds: 0.1246, 0.2109, 0.2972, 0.3835
+    /// Midpoints for switching: 0.1728, 0.2540, 0.3403
+    /// </summary>
+    private static string GetSpriteZoomKey(float currentZoom)
+    {
+        if (currentZoom < 0.1728f) return "0.1246";
+        if (currentZoom < 0.2540f) return "0.2109";
+        if (currentZoom < 0.3403f) return "0.2972";
+        return "0.3835";
     }
 
     public override void Render(DrawingContext context)
@@ -109,6 +137,33 @@ public class SkillTreeCanvas : Control
         if (TreeData == null)
             return;
 
+        // Build sprite bitmap and coord dictionaries for current zoom level
+        var spriteBitmaps = new Dictionary<string, SKBitmap>();
+        var spriteCoords = new Dictionary<string, SpriteSheetData>();
+
+        if (_spriteService != null && TreeData.SpriteSheets.Count > 0)
+        {
+            // Synchronously gather already-loaded bitmaps from service's in-memory cache
+            foreach (var (spriteType, zoomDict) in TreeData.SpriteSheets)
+            {
+                if (zoomDict.TryGetValue(_currentSpriteZoomKey, out var sheetData))
+                {
+                    // Store coord data for lookup
+                    spriteCoords[spriteType] = sheetData;
+
+                    // Try to get already-loaded bitmap (service caches them)
+                    if (!string.IsNullOrEmpty(sheetData.Filename))
+                    {
+                        var bitmap = _spriteService.GetSpriteSheetAsync(sheetData.Filename).Result;
+                        if (bitmap != null)
+                        {
+                            spriteBitmaps[spriteType] = bitmap;
+                        }
+                    }
+                }
+            }
+        }
+
         // Create custom draw operation for SkiaSharp rendering
         var operation = new SkillTreeDrawOperation(
             new Rect(0, 0, Bounds.Width, Bounds.Height),
@@ -116,7 +171,9 @@ public class SkillTreeCanvas : Control
             AllocatedNodeIds ?? new HashSet<int>(),
             (float)ZoomLevel,
             _offsetX,
-            _offsetY);
+            _offsetY,
+            spriteBitmaps,
+            spriteCoords);
 
         context.Custom(operation);
     }
@@ -151,6 +208,23 @@ public class SkillTreeCanvas : Control
         {
             _hoveredNodeId = null;
             ToolTip.SetIsOpen(this, false);
+        }
+
+        // Check if we crossed a sprite LOD threshold
+        var newZoomKey = GetSpriteZoomKey((float)ZoomLevel);
+        if (newZoomKey != _currentSpriteZoomKey && _spriteService != null && TreeData != null)
+        {
+            _currentSpriteZoomKey = newZoomKey;
+            Console.WriteLine($"Sprite LOD switched to: {newZoomKey}");
+
+            // Preload new zoom level sprites asynchronously (non-blocking)
+            var treeData = TreeData; // Capture for async context
+            Task.Run(async () =>
+            {
+                await _spriteService.PreloadSpriteSheetsAsync(treeData, newZoomKey);
+                // Trigger re-render on UI thread after sprites loaded
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => InvalidateVisual());
+            });
         }
 
         InvalidateVisual();
@@ -346,16 +420,8 @@ public class SkillTreeCanvas : Control
             var nodeX = node.CalculatedX.Value;
             var nodeY = node.CalculatedY.Value;
 
-            // Determine radius based on node type (matches DrawNodes)
-            float radius;
-            if (node.IsKeystone)
-                radius = 18f;
-            else if (node.IsNotable)
-                radius = 12f;
-            else if (node.IsJewelSocket)
-                radius = 10f;
-            else
-                radius = 6f;
+            // Try to get radius from sprite dimensions if available
+            float radius = GetNodeHitTestRadius(node);
 
             // Calculate distance from world position to node center
             var dx = worldPos.X - nodeX;
@@ -367,6 +433,52 @@ public class SkillTreeCanvas : Control
         }
 
         return null;
+    }
+
+    private float GetNodeHitTestRadius(PassiveNode node)
+    {
+        // Try to get sprite dimensions for more accurate hit testing
+        if (_spriteService != null && TreeData != null)
+        {
+            // Determine sprite type
+            string spriteType;
+            if (node.IsKeystone)
+                spriteType = "keystoneActive"; // Use active for size reference
+            else if (node.IsNotable)
+                spriteType = "notableActive";
+            else if (node.IsJewelSocket)
+                spriteType = "jewel";
+            else if (node.IsMastery)
+                spriteType = ""; // No mastery sprites yet
+            else
+                spriteType = "normalActive";
+
+            if (!string.IsNullOrEmpty(spriteType) &&
+                TreeData.SpriteSheets.TryGetValue(spriteType, out var zoomDict) &&
+                zoomDict.TryGetValue(_currentSpriteZoomKey, out var sheetData))
+            {
+                // Get icon key
+                string iconKey = node.IsJewelSocket ? "JewelSocketActiveBlue" :
+                    (!string.IsNullOrEmpty(node.Icon) ? node.Icon : "");
+
+                if (!string.IsNullOrEmpty(iconKey) &&
+                    sheetData.Coords.TryGetValue(iconKey, out var coord))
+                {
+                    // Use max of width/height divided by 2 as radius
+                    return Math.Max(coord.W, coord.H) / 2f;
+                }
+            }
+        }
+
+        // Fallback to hardcoded radii
+        if (node.IsKeystone)
+            return 18f;
+        else if (node.IsNotable)
+            return 12f;
+        else if (node.IsJewelSocket)
+            return 10f;
+        else
+            return 6f;
     }
 
     private void UpdateTooltip()
@@ -533,8 +645,12 @@ public class SkillTreeCanvas : Control
         private readonly float _zoomLevel;
         private readonly float _offsetX;
         private readonly float _offsetY;
+        private readonly Dictionary<string, SKBitmap> _spriteBitmaps;
+        private readonly Dictionary<string, SpriteSheetData> _spriteCoords;
 
-        public SkillTreeDrawOperation(Rect bounds, SkillTreeData treeData, HashSet<int> allocatedNodeIds, float zoomLevel, float offsetX, float offsetY)
+        public SkillTreeDrawOperation(Rect bounds, SkillTreeData treeData, HashSet<int> allocatedNodeIds,
+            float zoomLevel, float offsetX, float offsetY,
+            Dictionary<string, SKBitmap> spriteBitmaps, Dictionary<string, SpriteSheetData> spriteCoords)
         {
             _bounds = bounds;
             _treeData = treeData;
@@ -542,6 +658,8 @@ public class SkillTreeCanvas : Control
             _zoomLevel = zoomLevel;
             _offsetX = offsetX;
             _offsetY = offsetY;
+            _spriteBitmaps = spriteBitmaps;
+            _spriteCoords = spriteCoords;
         }
 
         public Rect Bounds => _bounds;
@@ -584,11 +702,58 @@ public class SkillTreeCanvas : Control
 
         private void RenderTree(SKCanvas canvas)
         {
-            // Draw connections first (so nodes appear on top)
+            // Draw group backgrounds first (behind everything)
+            DrawGroupBackgrounds(canvas);
+
+            // Draw connections on top of backgrounds
             DrawConnections(canvas);
 
             // Draw nodes on top of connections
             DrawNodes(canvas);
+        }
+
+        private void DrawGroupBackgrounds(SKCanvas canvas)
+        {
+            // Check if we have group background sprite sheet
+            if (!_spriteCoords.TryGetValue("groupBackground", out var bgCoords) ||
+                !_spriteBitmaps.TryGetValue("groupBackground", out var bgBitmap))
+            {
+                return; // No background sprites available, skip
+            }
+
+            foreach (var group in _treeData.Groups.Values)
+            {
+                if (group.Background == null || string.IsNullOrEmpty(group.Background.Image))
+                    continue;
+
+                // Look up background sprite coordinates
+                if (!bgCoords.Coords.TryGetValue(group.Background.Image, out var coord))
+                    continue;
+
+                // Source rect from sprite sheet
+                var srcRect = new SKRect(coord.X, coord.Y, coord.X + coord.W, coord.Y + coord.H);
+
+                // Destination rect centered on group position
+                var destRect = new SKRect(
+                    group.X - coord.W / 2f,
+                    group.Y - coord.H / 2f,
+                    group.X + coord.W / 2f,
+                    group.Y + coord.H / 2f);
+
+                // Draw background
+                canvas.DrawBitmap(bgBitmap, srcRect, destRect);
+
+                // If half image, draw mirrored copy
+                if (group.Background.IsHalfImage)
+                {
+                    canvas.Save();
+                    canvas.Translate(group.X, group.Y);
+                    canvas.Scale(-1, 1);
+                    canvas.Translate(-group.X, -group.Y);
+                    canvas.DrawBitmap(bgBitmap, srcRect, destRect);
+                    canvas.Restore();
+                }
+            }
         }
 
         private void DrawConnections(SKCanvas canvas)
@@ -653,7 +818,7 @@ public class SkillTreeCanvas : Control
 
         private void DrawNodes(SKCanvas canvas)
         {
-            // Create paint objects for allocated and unallocated nodes
+            // Fallback paint objects if sprites unavailable
             using var allocatedPaint = new SKPaint
             {
                 Color = new SKColor(200, 150, 50), // Gold
@@ -675,8 +840,17 @@ public class SkillTreeCanvas : Control
 
                 var x = node.CalculatedX.Value;
                 var y = node.CalculatedY.Value;
+                var isAllocated = _allocatedNodeIds.Contains(node.Id);
 
-                // Determine radius based on node type
+                // Try sprite-based rendering first
+                if (TryDrawNodeSprite(canvas, node, x, y, isAllocated))
+                {
+                    // Successfully drew sprite, also draw frame on top
+                    TryDrawNodeFrame(canvas, node, x, y, isAllocated);
+                    continue;
+                }
+
+                // Fallback to colored circle rendering
                 float radius;
                 if (node.IsKeystone)
                     radius = 18f;
@@ -687,11 +861,107 @@ public class SkillTreeCanvas : Control
                 else
                     radius = 6f;
 
-                // Use gold color for allocated nodes, dark gray for unallocated
-                var paint = _allocatedNodeIds.Contains(node.Id) ? allocatedPaint : unallocatedPaint;
-
+                var paint = isAllocated ? allocatedPaint : unallocatedPaint;
                 canvas.DrawCircle(x, y, radius, paint);
             }
+        }
+
+        private bool TryDrawNodeSprite(SKCanvas canvas, PassiveNode node, float x, float y, bool isAllocated)
+        {
+            // Determine sprite type based on node type and allocation
+            string spriteType;
+            if (node.IsKeystone)
+                spriteType = isAllocated ? "keystoneActive" : "keystoneInactive";
+            else if (node.IsNotable)
+                spriteType = isAllocated ? "notableActive" : "notableInactive";
+            else if (node.IsJewelSocket)
+                spriteType = "jewel"; // Jewel sprites handle active/inactive via different coord keys
+            else if (node.IsMastery)
+                return false; // Skip mastery sprites for now
+            else
+                spriteType = isAllocated ? "normalActive" : "normalInactive";
+
+            // Get sprite sheet for this type
+            if (!_spriteCoords.TryGetValue(spriteType, out var sheetData) ||
+                !_spriteBitmaps.TryGetValue(spriteType, out var bitmap))
+            {
+                return false; // Sprite data not available
+            }
+
+            // Get node icon key - for jewel sockets, use special keys
+            string iconKey;
+            if (node.IsJewelSocket)
+            {
+                iconKey = isAllocated ? "JewelSocketActiveBlue" : "JewelSocketNormal";
+            }
+            else if (string.IsNullOrEmpty(node.Icon))
+            {
+                return false; // No icon defined for this node
+            }
+            else
+            {
+                iconKey = node.Icon;
+            }
+
+            // Look up sprite coordinates
+            if (!sheetData.Coords.TryGetValue(iconKey, out var coord))
+            {
+                return false; // Icon not found in sprite sheet
+            }
+
+            // Source rect from sprite sheet
+            var srcRect = new SKRect(coord.X, coord.Y, coord.X + coord.W, coord.Y + coord.H);
+
+            // Destination rect centered on node position
+            var destRect = new SKRect(
+                x - coord.W / 2f,
+                y - coord.H / 2f,
+                x + coord.W / 2f,
+                y + coord.H / 2f);
+
+            // Draw sprite
+            canvas.DrawBitmap(bitmap, srcRect, destRect);
+            return true;
+        }
+
+        private void TryDrawNodeFrame(SKCanvas canvas, PassiveNode node, float x, float y, bool isAllocated)
+        {
+            // Get frame sprite sheet
+            if (!_spriteCoords.TryGetValue("frame", out var frameData) ||
+                !_spriteBitmaps.TryGetValue("frame", out var frameBitmap))
+            {
+                return; // Frame sprites not available
+            }
+
+            // Determine frame key based on node type
+            string frameKey;
+            if (node.IsKeystone)
+                frameKey = isAllocated ? "KeystoneFrameAllocated" : "KeystoneFrameUnallocated";
+            else if (node.IsNotable)
+                frameKey = isAllocated ? "NotableFrameAllocated" : "NotableFrameUnallocated";
+            else if (node.IsJewelSocket)
+                return; // Jewel sockets have frames in jewel sprite sheet
+            else
+                frameKey = isAllocated ? "PSSkillFrameActive" : "PSSkillFrame";
+
+            // Look up frame coordinates
+            if (!frameData.Coords.TryGetValue(frameKey, out var coord))
+            {
+                return; // Frame not found
+            }
+
+            // Source rect from sprite sheet
+            var srcRect = new SKRect(coord.X, coord.Y, coord.X + coord.W, coord.Y + coord.H);
+
+            // Destination rect centered on node position (slightly larger than icon)
+            var destRect = new SKRect(
+                x - coord.W / 2f,
+                y - coord.H / 2f,
+                x + coord.W / 2f,
+                y + coord.H / 2f);
+
+            // Draw frame
+            canvas.DrawBitmap(frameBitmap, srcRect, destRect);
         }
     }
 }
