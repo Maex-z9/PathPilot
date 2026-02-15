@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 5 of 10 (Sprite Foundation)
-Plan: 0 of TBD
-Status: Ready to plan
-Last activity: 2026-02-15 — v1.1 roadmap created with 6 phases (5-10)
+Plan: 1 of 2
+Status: In progress
+Last activity: 2026-02-15 — Completed 05-01-PLAN.md (Sprite Foundation Data Layer)
 
-Progress: [████░░░░░░] 40% (v1.0 complete: 4/10 phases)
+Progress: [█████░░░░░] 45% (Phase 5: 1/2 plans complete)
 
 ## Milestones
 
@@ -26,12 +26,15 @@ Progress: [████░░░░░░] 40% (v1.0 complete: 4/10 phases)
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6 (v1.0)
-- v1.1 plans: TBD (pending phase planning)
+- Total plans completed: 7 (6 v1.0 + 1 v1.1)
+- v1.1 plans: 1 of TBD completed
 
 **v1.0 Performance:**
 - Phases 1-4 completed in ~7 days
 - Average ~1.5 plans per phase
+
+**v1.1 Performance:**
+- Phase 5 Plan 1: 2m 52s (2 tasks, 6 files)
 
 ## Accumulated Context
 
@@ -48,6 +51,8 @@ All v1.0 decisions logged in PROJECT.md Key Decisions table.
 - Phase 10: Ascendancy (ASC-01 to ASC-03) — bonus polish, uses sprite system
 
 **Rationale:** Start with sprites (visual impact) before editing (user compares to GGG/PoB immediately). Research validates architecture soundness.
+- [Phase 05-01]: Add SkiaSharp to PathPilot.Core for sprite bitmap decoding
+- [Phase 05-01]: Service owns all SKBitmaps using singleton pattern for safe memory management
 
 ### Pending Todos
 
@@ -63,7 +68,7 @@ None. Research completed with HIGH confidence. Key mitigations identified:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: v1.1 roadmap creation complete, ready to plan Phase 5
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
 
 ---
