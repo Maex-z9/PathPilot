@@ -3,7 +3,7 @@
         x:Class="PathPilot.Desktop.SettingsWindow"
         Title="Settings"
         Width="450"
-        Height="350"
+        Height="450"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="#0c0b0a">
@@ -104,6 +104,42 @@
                                     Grid.Column="1"
                                     Content="Reset"
                                     Click="ResetPositionButton_Click"
+                                    MinWidth="120"
+                                    HorizontalContentAlignment="Center"
+                                    Background="#2a2520"
+                                    Foreground="#e0d6c2"
+                                    BorderBrush="#5a4f3d"
+                                    Padding="10,8"
+                                    CornerRadius="4"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Updates Section -->
+                <Border Background="#15130f" CornerRadius="8" Padding="15"
+                        BorderBrush="#2a2520" BorderThickness="1">
+                    <StackPanel Spacing="15">
+                        <TextBlock Text="Updates"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#c8aa6e"/>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Name="VersionText"
+                                           Text="v1.0.0"
+                                           FontSize="13"
+                                           Foreground="#e0d6c2"/>
+                                <TextBlock Name="UpdateStatusText"
+                                           Text="Click to check for updates"
+                                           FontSize="11"
+                                           Foreground="#6b6156"
+                                           Cursor="Arrow"/>
+                            </StackPanel>
+                            <Button Name="CheckUpdateButton"
+                                    Grid.Column="1"
+                                    Content="Check for Updates"
+                                    Click="CheckUpdateButton_Click"
                                     MinWidth="120"
                                     HorizontalContentAlignment="Center"
                                     Background="#2a2520"

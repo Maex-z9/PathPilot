@@ -2,15 +2,20 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using PathPilot.Core.Services;
 using PathPilot.Desktop.Settings;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace PathPilot.Desktop;
 
 public partial class SettingsWindow : Window
 {
     private readonly OverlaySettings _settings;
+    private readonly UpdateCheckService _updateCheckService = new();
+    private string? _releaseUrl;
     private Button? _recordingButton;
 
     // Temporary values while editing
@@ -34,6 +39,11 @@ public partial class SettingsWindow : Window
         _interactiveModifiers = settings.InteractiveModifiers;
 
         UpdateHotkeyButtonTexts();
+
+        // Show current version
+        var version = Assembly.GetEntryAssembly()?.GetName().Version;
+        if (version != null)
+            VersionText.Text = $"v{version.Major}.{version.Minor}.{version.Build}";
 
         // Handle key recording
         KeyDown += OnKeyDown;
@@ -165,6 +175,52 @@ public partial class SettingsWindow : Window
         _settings.OverlayX = 10;
         _settings.OverlayY = 10;
         SettingsChanged = true;
+    }
+
+    private async void CheckUpdateButton_Click(object? sender, RoutedEventArgs e)
+    {
+        CheckUpdateButton.IsEnabled = false;
+        CheckUpdateButton.Content = "Checking...";
+        UpdateStatusText.Text = "Checking for updates...";
+        UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(107, 97, 86)); // #6b6156
+        UpdateStatusText.Cursor = new Cursor(StandardCursorType.Arrow);
+        _releaseUrl = null;
+
+        var version = Assembly.GetEntryAssembly()?.GetName().Version;
+        var currentVersion = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "1.0.0";
+
+        var (hasUpdate, newVersion, releaseUrl, error) = await _updateCheckService.CheckForUpdateAsync(currentVersion);
+
+        if (error)
+        {
+            UpdateStatusText.Text = "Check failed — try again later";
+            UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(168, 107, 107)); // muted red
+        }
+        else if (hasUpdate && newVersion != null)
+        {
+            _releaseUrl = releaseUrl;
+            UpdateStatusText.Text = $"v{newVersion} available! Click here to download.";
+            UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(200, 170, 110)); // #c8aa6e gold
+            UpdateStatusText.Cursor = new Cursor(StandardCursorType.Hand);
+            UpdateStatusText.PointerPressed -= UpdateStatusText_PointerPressed;
+            UpdateStatusText.PointerPressed += UpdateStatusText_PointerPressed;
+        }
+        else
+        {
+            UpdateStatusText.Text = "Up to date";
+            UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(107, 97, 86)); // #6b6156
+        }
+
+        CheckUpdateButton.Content = "Check for Updates";
+        CheckUpdateButton.IsEnabled = true;
+    }
+
+    private void UpdateStatusText_PointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_releaseUrl != null)
+        {
+            Process.Start(new ProcessStartInfo(_releaseUrl) { UseShellExecute = true });
+        }
     }
 
     private void CancelButton_Click(object? sender, RoutedEventArgs e)
