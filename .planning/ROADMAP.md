@@ -42,11 +42,13 @@
   3. Sprite quality changes automatically based on zoom level (4 GGG zoom thresholds)
   4. Allocated nodes display active sprites, unallocated display inactive sprites
   5. Sprite sheets load from local cache on subsequent launches (no re-download)
-**Plans**: 2 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Sprite data models, JSON parsing, and sprite download service
+- [x] 05-01-PLAN.md — Sprite data models, JSON parsing, and sprite download service
 - [ ] 05-02-PLAN.md — Sprite-based node rendering with LOD and group backgrounds
+- [ ] 05-03-PLAN.md — [GAP] Performance: tile-based render cache for smooth pan/zoom + sprite preloading fix
+- [ ] 05-04-PLAN.md — [GAP] Alignment: keystone frame and group background positioning fixes
 
 ### Phase 6: Stats & Tooltips
 **Goal**: Display formatted node stats and modifiers in hover tooltips
@@ -128,7 +130,7 @@ Plans:
 | 2. Core Rendering | v1.0 | 2/2 | Complete | 2026-02-04 |
 | 3. Navigation | v1.0 | 1/1 | Complete | 2026-02-04 |
 | 4. Interaction | v1.0 | 1/1 | Complete | 2026-02-04 |
-| 5. Sprite Foundation | v1.1 | 0/2 | Planning complete | - |
+| 5. Sprite Foundation | v1.1 | 1/4 | Gap closure | - |
 | 6. Stats & Tooltips | v1.1 | 0/TBD | Not started | - |
 | 7. Node Editing | v1.1 | 0/TBD | Not started | - |
 | 8. Node Search | v1.1 | 0/TBD | Not started | - |
