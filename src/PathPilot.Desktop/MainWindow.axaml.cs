@@ -64,7 +64,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnMainWindowOpened(object? sender, EventArgs e)
+    private async void OnMainWindowOpened(object? sender, EventArgs e)
     {
         // Start global hotkey listener
         _hotkeyService.Start();
@@ -72,6 +72,29 @@ public partial class MainWindow : Window
         // Update overlay button tooltip with configured hotkey
         OverlayButton.SetValue(ToolTip.TipProperty,
             $"Show overlay ({FormatHotkey(_overlaySettings.ToggleModifiers, _overlaySettings.ToggleKey)} to toggle)");
+
+        // Auto-load last saved build, or show import dialog if none exist
+        var savedBuilds = BuildStorage.GetSavedBuilds();
+        if (savedBuilds.Count > 0)
+        {
+            var lastBuild = BuildStorage.LoadBuild(savedBuilds[0].FilePath);
+            if (lastBuild != null)
+            {
+                _currentBuild = lastBuild;
+                PopulateLoadoutSelectors();
+                UpdateDisplayedLoadout();
+                BuildTitleText.Text = _currentBuild.CharacterDescription;
+                SaveButton.IsEnabled = true;
+                Console.WriteLine($"Auto-loaded last build: {_currentBuild.Name}");
+
+                _overlayService.UpdateBuild(_currentBuild);
+                _ = PreloadGemIconsAsync();
+            }
+        }
+        else
+        {
+            ImportButton_Click(null, new RoutedEventArgs());
+        }
     }
 
     private void OnMainWindowClosed(object? sender, EventArgs e)
