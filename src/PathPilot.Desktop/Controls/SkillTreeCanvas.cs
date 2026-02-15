@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Threading;
 using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
@@ -93,12 +95,19 @@ public class SkillTreeCanvas : Control
     private int? _focusedNodeId = null;
 
     // Zoom limits
-    private const float MinZoom = 0.02f;
-    private const float MaxZoom = 2.0f;
+    private const float MinZoom = 0.08f;
+    private const float MaxZoom = 0.80f;
+
+    // Zoom event throttle — touchpads fire events at very high frequency
+    private DateTime _lastZoomTime = DateTime.MinValue;
+    private static readonly TimeSpan ZoomThrottleInterval = TimeSpan.FromMilliseconds(16); // ~60fps cap
+
 
     // Sprite service
     private SkillTreeSpriteService? _spriteService = null;
     private string _currentSpriteZoomKey = "0.1246"; // Must match initial ZoomLevel (0.15)
+    private CancellationTokenSource? _lodPreloadCts = null;
+    private DispatcherTimer? _lodDebounceTimer = null;
 
     // Cached sprite data — rebuilt only when zoom key changes
     private Dictionary<string, SKBitmap> _cachedSpriteBitmaps = new();
@@ -110,17 +119,6 @@ public class SkillTreeCanvas : Control
     // Factor 0.5 because GGG sprites are designed for 2x display density.
     private float _spriteScale = 0.5f / 0.1246f;
 
-    // SKPicture cache — the key performance optimization.
-    // IMPORTANT: Only the render thread touches _cachedPicture to avoid race conditions.
-    // UI thread signals rebuild via _pictureIsDirty flag.
-    private SKPicture? _cachedPicture = null;
-    private volatile bool _pictureIsDirty = true;
-    private float _pictureZoom = 0f;
-    private int _pictureAllocCount = -1;
-    private int _pictureSpriteCount = -1;
-    private int _pictureHighlightCount = -1;
-    private int? _pictureFocusedNodeId = null;
-    private string? _pictureZoomKey = null;
 
     static SkillTreeCanvas()
     {
@@ -131,7 +129,6 @@ public class SkillTreeCanvas : Control
     {
         _spriteService = spriteService;
         _cachedZoomKey = null;
-        _pictureIsDirty = true;
         InvalidateVisual();
     }
 
@@ -213,6 +210,15 @@ public class SkillTreeCanvas : Control
     {
         base.OnPointerWheelChanged(e);
 
+        // Throttle zoom events — touchpads fire at very high frequency
+        var now = DateTime.UtcNow;
+        if (now - _lastZoomTime < ZoomThrottleInterval)
+        {
+            e.Handled = true;
+            return;
+        }
+        _lastZoomTime = now;
+
         var pointerPos = e.GetCurrentPoint(this).Position;
         var worldBefore = ScreenToWorld(pointerPos);
 
@@ -231,31 +237,63 @@ public class SkillTreeCanvas : Control
             ToolTip.SetIsOpen(this, false);
         }
 
-        // Check sprite LOD threshold crossing
+        // Check sprite LOD threshold crossing — debounced to avoid loading all zoom levels
+        // during rapid touchpad zoom (which would OOM from 92MB+ of decoded bitmaps)
         var newZoomKey = GetSpriteZoomKey((float)ZoomLevel);
         if (newZoomKey != _currentSpriteZoomKey && _spriteService != null && TreeData != null)
         {
+            // Cancel any ongoing preload from a previous threshold crossing
+            _lodPreloadCts?.Cancel();
+
             _currentSpriteZoomKey = newZoomKey;
             _cachedZoomKey = null; // Force sprite cache rebuild
-            _pictureIsDirty = true;
+    
 
-            var treeData = TreeData;
-            Task.Run(async () =>
+            // Debounce: reset timer — only preload after zooming settles for 300ms
+            if (_lodDebounceTimer == null)
             {
-                await _spriteService.PreloadSpriteSheetsAsync(treeData, newZoomKey);
-                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                {
-                    _cachedZoomKey = null;
-                    _pictureIsDirty = true;
-                    InvalidateVisual();
-                });
-            });
+                _lodDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+                _lodDebounceTimer.Tick += LodDebounceTimer_Tick;
+            }
+            _lodDebounceTimer.Stop();
+            _lodDebounceTimer.Start();
         }
 
-        // Zoom changed → picture must be rebuilt (signal only, no dispose from UI thread)
-        _pictureIsDirty = true;
+        // Zoom changed → just re-render with new transform
         InvalidateVisual();
         e.Handled = true;
+    }
+
+    private void LodDebounceTimer_Tick(object? sender, EventArgs e)
+    {
+        _lodDebounceTimer?.Stop();
+
+        if (_spriteService == null || TreeData == null)
+            return;
+
+        _lodPreloadCts?.Cancel();
+        _lodPreloadCts = new CancellationTokenSource();
+        var cts = _lodPreloadCts;
+
+        var treeData = TreeData;
+        var capturedZoomKey = _currentSpriteZoomKey;
+        var token = cts.Token;
+
+        Task.Run(async () =>
+        {
+            if (token.IsCancellationRequested) return;
+            await _spriteService!.PreloadSpriteSheetsAsync(treeData, capturedZoomKey, token);
+            if (token.IsCancellationRequested) return;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_currentSpriteZoomKey == capturedZoomKey)
+                {
+                    _cachedZoomKey = null;
+            
+                    InvalidateVisual();
+                }
+            });
+        });
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -353,7 +391,7 @@ public class SkillTreeCanvas : Control
         _offsetX += worldBeforeX - worldAfterX;
         _offsetY += worldBeforeY - worldAfterY;
 
-        _pictureIsDirty = true;
+
         InvalidateVisual();
     }
 
@@ -372,7 +410,7 @@ public class SkillTreeCanvas : Control
         _offsetX += worldBeforeX - worldAfterX;
         _offsetY += worldBeforeY - worldAfterY;
 
-        _pictureIsDirty = true;
+
         InvalidateVisual();
     }
 
@@ -390,7 +428,7 @@ public class SkillTreeCanvas : Control
         _offsetX += worldBeforeX - worldAfterX;
         _offsetY += worldBeforeY - worldAfterY;
 
-        _pictureIsDirty = true;
+
         InvalidateVisual();
     }
 
@@ -583,14 +621,14 @@ public class SkillTreeCanvas : Control
         _offsetX = node.CalculatedX.Value - (float)(Bounds.Width / 2 / ZoomLevel);
         _offsetY = node.CalculatedY.Value - (float)(Bounds.Height / 2 / ZoomLevel);
 
-        _pictureIsDirty = true;
+
         InvalidateVisual();
     }
 
     public void ClearFocusedNode()
     {
         _focusedNodeId = null;
-        _pictureIsDirty = true;
+
         InvalidateVisual();
     }
 
@@ -635,7 +673,7 @@ public class SkillTreeCanvas : Control
         {
             _offsetX = centerX - (float)(Bounds.Width / 2 / ZoomLevel);
             _offsetY = centerY - (float)(Bounds.Height / 2 / ZoomLevel);
-            _pictureIsDirty = true;
+    
             InvalidateVisual();
         }
     }
@@ -651,7 +689,7 @@ public class SkillTreeCanvas : Control
         {
             _offsetX = treeCenterX - (float)(Bounds.Width / 2 / ZoomLevel);
             _offsetY = treeCenterY - (float)(Bounds.Height / 2 / ZoomLevel);
-            _pictureIsDirty = true;
+    
             InvalidateVisual();
         }
     }
@@ -718,64 +756,35 @@ public class SkillTreeCanvas : Control
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
 
-            // Check if we need to rebuild the cached picture
-            // All checks happen on render thread — no race conditions
-            int highlightCount = _highlightedNodeIds?.Count ?? 0;
-            bool needsRebuild = _owner._pictureIsDirty
-                || _owner._cachedPicture == null
-                || _owner._pictureZoom != _zoomLevel
-                || _owner._pictureAllocCount != _allocatedNodeIds.Count
-                || _owner._pictureSpriteCount != _spriteBitmaps.Count
-                || _owner._pictureHighlightCount != highlightCount
-                || _owner._pictureFocusedNodeId != _focusedNodeId
-                || _owner._pictureZoomKey != _owner._currentSpriteZoomKey;
+            // Calculate visible world-space bounds for frustum culling
+            float viewWidth = (float)_bounds.Width / _zoomLevel;
+            float viewHeight = (float)_bounds.Height / _zoomLevel;
+            _visibleRect = new SKRect(_offsetX, _offsetY, _offsetX + viewWidth, _offsetY + viewHeight);
 
-            if (needsRebuild)
+            bool useSprites = _zoomLevel >= SpriteZoomThreshold && _spriteBitmaps.Count > 0;
+
+            // Apply zoom + pan transform, then render directly (no SKPicture)
+            canvas.Save();
+            canvas.Translate(-_offsetX * _zoomLevel, -_offsetY * _zoomLevel);
+            canvas.Scale(_zoomLevel, _zoomLevel);
+
+            using var bitmapPaint = new SKPaint
             {
-                // Dispose old picture on render thread (safe — we're the only consumer)
-                _owner._cachedPicture?.Dispose();
-                _owner._cachedPicture = null;
+                FilterQuality = SKFilterQuality.Medium,
+                IsAntialias = true
+            };
 
-                // Record all draw commands into an SKPicture in world space
-                var recordBounds = SKRect.Create(-2000, -2000, 32000, 28000);
-                using var recorder = new SKPictureRecorder();
-                var recordCanvas = recorder.BeginRecording(recordBounds);
+            if (useSprites)
+                DrawGroupBackgrounds(canvas, bitmapPaint);
+            DrawConnections(canvas);
+            DrawNodes(canvas, useSprites, bitmapPaint);
+            DrawHighlights(canvas);
 
-                bool useSprites = _zoomLevel >= SpriteZoomThreshold && _spriteBitmaps.Count > 0;
-
-                // Shared paint for filtered bitmap scaling (avoids pixelation)
-                using var bitmapPaint = new SKPaint
-                {
-                    FilterQuality = SKFilterQuality.Medium,
-                    IsAntialias = true
-                };
-
-                if (useSprites)
-                    DrawGroupBackgrounds(recordCanvas, bitmapPaint);
-                DrawConnections(recordCanvas);
-                DrawNodes(recordCanvas, useSprites, bitmapPaint);
-                DrawHighlights(recordCanvas);
-
-                _owner._cachedPicture = recorder.EndRecording();
-                _owner._pictureZoom = _zoomLevel;
-                _owner._pictureAllocCount = _allocatedNodeIds.Count;
-                _owner._pictureSpriteCount = _spriteBitmaps.Count;
-                _owner._pictureHighlightCount = highlightCount;
-                _owner._pictureFocusedNodeId = _focusedNodeId;
-                _owner._pictureZoomKey = _owner._currentSpriteZoomKey;
-                _owner._pictureIsDirty = false;
-            }
-
-            // Replay the cached picture with current pan offset + zoom
-            if (_owner._cachedPicture != null)
-            {
-                canvas.Save();
-                canvas.Translate(-_offsetX * _zoomLevel, -_offsetY * _zoomLevel);
-                canvas.Scale(_zoomLevel, _zoomLevel);
-                canvas.DrawPicture(_owner._cachedPicture);
-                canvas.Restore();
-            }
+            canvas.Restore();
         }
+
+        // Visible world-space rectangle for frustum culling
+        private SKRect _visibleRect;
 
         private void DrawGroupBackgrounds(SKCanvas canvas, SKPaint bitmapPaint)
         {
@@ -783,9 +792,20 @@ public class SkillTreeCanvas : Control
                 !_spriteBitmaps.TryGetValue("groupBackground", out var bgBitmap))
                 return;
 
+            // Group background margin for culling
+            var bgMargin = 500f;
+            var bgRect = SKRect.Create(
+                _visibleRect.Left - bgMargin, _visibleRect.Top - bgMargin,
+                _visibleRect.Width + bgMargin * 2, _visibleRect.Height + bgMargin * 2);
+
             foreach (var group in _treeData.Groups.Values)
             {
                 if (group.Background == null || string.IsNullOrEmpty(group.Background.Image))
+                    continue;
+
+                // Frustum culling for group backgrounds
+                if (group.X < bgRect.Left || group.X > bgRect.Right ||
+                    group.Y < bgRect.Top || group.Y > bgRect.Bottom)
                     continue;
 
                 if (!bgCoords.Coords.TryGetValue(group.Background.Image, out var coord))
@@ -833,6 +853,12 @@ public class SkillTreeCanvas : Control
 
             var drawnConnections = new HashSet<long>();
 
+            // Expanded viewport for connections (generous margin for arcs)
+            var connMargin = 1000f;
+            var connRect = SKRect.Create(
+                _visibleRect.Left - connMargin, _visibleRect.Top - connMargin,
+                _visibleRect.Width + connMargin * 2, _visibleRect.Height + connMargin * 2);
+
             foreach (var node in _treeData.Nodes.Values)
             {
                 if (!node.CalculatedX.HasValue || !node.CalculatedY.HasValue)
@@ -842,6 +868,12 @@ public class SkillTreeCanvas : Control
 
                 var startX = node.CalculatedX.Value;
                 var startY = node.CalculatedY.Value;
+
+                // Skip nodes entirely outside expanded viewport
+                if (startX < connRect.Left || startX > connRect.Right ||
+                    startY < connRect.Top || startY > connRect.Bottom)
+                    continue;
+
                 var nodeIsAllocated = _allocatedNodeIds.Contains(node.Id);
 
                 foreach (var connectedId in node.ConnectedNodes)
@@ -939,6 +971,12 @@ public class SkillTreeCanvas : Control
                 IsAntialias = true
             };
 
+            // Node margin for culling (largest sprite ~50 world units)
+            var nodeMargin = 100f;
+            var nodeRect = SKRect.Create(
+                _visibleRect.Left - nodeMargin, _visibleRect.Top - nodeMargin,
+                _visibleRect.Width + nodeMargin * 2, _visibleRect.Height + nodeMargin * 2);
+
             foreach (var node in _treeData.Nodes.Values)
             {
                 if (!node.CalculatedX.HasValue || !node.CalculatedY.HasValue)
@@ -946,6 +984,12 @@ public class SkillTreeCanvas : Control
 
                 var x = node.CalculatedX.Value;
                 var y = node.CalculatedY.Value;
+
+                // Frustum culling — skip nodes outside visible area
+                if (x < nodeRect.Left || x > nodeRect.Right ||
+                    y < nodeRect.Top || y > nodeRect.Bottom)
+                    continue;
+
                 var isAllocated = _allocatedNodeIds.Contains(node.Id);
 
                 // Draw class start node background sprite
@@ -1172,6 +1216,11 @@ public class SkillTreeCanvas : Control
 
                 var x = node.CalculatedX.Value;
                 var y = node.CalculatedY.Value;
+
+                // Frustum culling for highlights
+                if (x < _visibleRect.Left - 100 || x > _visibleRect.Right + 100 ||
+                    y < _visibleRect.Top - 100 || y > _visibleRect.Bottom + 100)
+                    continue;
                 float radius = GetHighlightRadius(node);
 
                 bool isFocused = _focusedNodeId.HasValue && _focusedNodeId.Value == nodeId;

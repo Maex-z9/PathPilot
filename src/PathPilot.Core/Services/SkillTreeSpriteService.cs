@@ -88,9 +88,10 @@ public class SkillTreeSpriteService : IDisposable
     }
 
     /// <summary>
-    /// Preloads all sprite sheets for a given zoom level
+    /// Preloads all sprite sheets for a given zoom level.
+    /// Supports cancellation for rapid LOD switching.
     /// </summary>
-    public async Task PreloadSpriteSheetsAsync(SkillTreeData treeData, string zoomKey)
+    public async Task PreloadSpriteSheetsAsync(SkillTreeData treeData, string zoomKey, CancellationToken cancellationToken = default)
     {
         var urls = new HashSet<string>();
 
@@ -103,6 +104,8 @@ public class SkillTreeSpriteService : IDisposable
                     urls.Add(sheetData.Filename);
             }
         }
+
+        if (cancellationToken.IsCancellationRequested) return;
 
         Console.WriteLine($"Preloading {urls.Count} sprite sheets for zoom level {zoomKey}...");
 
