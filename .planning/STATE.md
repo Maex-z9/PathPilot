@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 5 of 10 (Sprite Foundation)
-Plan: 1 of 2
+Plan: 2 of 4
 Status: In progress
-Last activity: 2026-02-15 - Completed quick task 1: Commit node search and auto-update installer changes
+Last activity: 2026-02-15 - Completed 05-03-PLAN.md (Performance Optimization)
 
-Progress: [█████░░░░░] 45% (Phase 5: 1/2 plans complete)
+Progress: [█████░░░░░] 50% (Phase 5: 2/4 plans complete)
 
 ## Milestones
 
@@ -35,6 +35,7 @@ Progress: [█████░░░░░] 45% (Phase 5: 1/2 plans complete)
 
 **v1.1 Performance:**
 - Phase 5 Plan 1: 2m 52s (2 tasks, 6 files)
+- Phase 5 Plan 3: 11m 0s (2 tasks, 3 files)
 
 ## Accumulated Context
 
@@ -53,6 +54,10 @@ All v1.0 decisions logged in PROJECT.md Key Decisions table.
 **Rationale:** Start with sprites (visual impact) before editing (user compares to GGG/PoB immediately). Research validates architecture soundness.
 - [Phase 05-01]: Add SkiaSharp to PathPilot.Core for sprite bitmap decoding
 - [Phase 05-01]: Service owns all SKBitmaps using singleton pattern for safe memory management
+- [Phase 05-03]: Tile cache covers 2x viewport area (1.5x margin) for smooth panning before invalidation
+- [Phase 05-03]: Cache clamped to 4096x4096 pixels maximum to prevent OOM at extreme zoom levels
+- [Phase 05-03]: Dynamic bitmap filter quality (Low for zoom <0.3, Medium ≥0.3) balances performance and quality
+- [Phase 05-03]: Sprite preload verification via TryGetLoadedBitmap() before setting TreeData prevents black flash
 
 ### Pending Todos
 
@@ -74,7 +79,7 @@ None. Research completed with HIGH confidence. Key mitigations identified:
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed 05-03-PLAN.md (Performance Optimization)
 Resume file: None
 
 ---
