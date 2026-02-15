@@ -13,7 +13,8 @@ Built with C# 12, .NET 10, Avalonia UI, and SkiaSharp.
 - **Unified Loadout Selector** — Switch SkillSet, ItemSet, and TreeSet together
 - **Gem Display** — Skill gems with real PoE Wiki icons, levels, quality, colors, and acquisition info (quest/vendor)
 - **Item Display** — Items with rarity colors, mod highlighting, and tooltips with full details
-- **Skill Tree Viewer** — 1300+ nodes with GPU-accelerated SkiaSharp rendering, zoom, pan, and hover tooltips
+- **Skill Tree Viewer** — 1300+ nodes with real PoE sprites (Normal, Notable, Keystone), group backgrounds, zoom-based LOD switching, and hover tooltips
+- **Node Search** — Search nodes by name, navigate to results, and highlight matches in the tree
 - **Ingame Overlay** — Transparent overlay showing gems and quest tracker over the game (Windows)
 - **Quest Tracker** — Track skill point quests, ascendancy trials (with trap types), and labs with progress saving
 
@@ -73,8 +74,8 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 | Version | Status | Highlights |
 |---------|--------|------------|
 | v1.0 | Released | Core skill tree rendering, build import, gem/item display |
-| v1.1 | In Progress | Full tree graphics, node search, ascendancy trees |
-| v2.0 | Planned | Advanced quest tracking |
+| v1.1 | In Progress | Real PoE sprites, node search, stat tooltips, node editing |
+| v2.0 | Planned | Minimap, ascendancy trees, advanced quest tracking |
 
 ## License
 
