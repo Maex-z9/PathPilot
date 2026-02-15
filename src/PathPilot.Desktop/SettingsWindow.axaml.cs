@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace PathPilot.Desktop;
 
@@ -15,6 +16,7 @@ public partial class SettingsWindow : Window
 {
     private readonly OverlaySettings _settings;
     private readonly UpdateCheckService _updateCheckService = new();
+    private string? _installerUrl;
     private string? _releaseUrl;
     private Button? _recordingButton;
 
@@ -179,17 +181,25 @@ public partial class SettingsWindow : Window
 
     private async void CheckUpdateButton_Click(object? sender, RoutedEventArgs e)
     {
+        // If we already found an update, start the install
+        if (_installerUrl != null)
+        {
+            await DownloadAndInstallAsync();
+            return;
+        }
+
         CheckUpdateButton.IsEnabled = false;
         CheckUpdateButton.Content = "Checking...";
         UpdateStatusText.Text = "Checking for updates...";
         UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(107, 97, 86)); // #6b6156
         UpdateStatusText.Cursor = new Cursor(StandardCursorType.Arrow);
+        _installerUrl = null;
         _releaseUrl = null;
 
         var version = Assembly.GetEntryAssembly()?.GetName().Version;
         var currentVersion = version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "1.0.0";
 
-        var (hasUpdate, newVersion, releaseUrl, error) = await _updateCheckService.CheckForUpdateAsync(currentVersion);
+        var (hasUpdate, newVersion, installerUrl, releaseUrl, error) = await _updateCheckService.CheckForUpdateAsync(currentVersion);
 
         if (error)
         {
@@ -198,12 +208,24 @@ public partial class SettingsWindow : Window
         }
         else if (hasUpdate && newVersion != null)
         {
+            _installerUrl = installerUrl;
             _releaseUrl = releaseUrl;
-            UpdateStatusText.Text = $"v{newVersion} available! Click here to download.";
-            UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(200, 170, 110)); // #c8aa6e gold
-            UpdateStatusText.Cursor = new Cursor(StandardCursorType.Hand);
-            UpdateStatusText.PointerPressed -= UpdateStatusText_PointerPressed;
-            UpdateStatusText.PointerPressed += UpdateStatusText_PointerPressed;
+
+            if (installerUrl != null)
+            {
+                UpdateStatusText.Text = $"v{newVersion} available!";
+                UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(200, 170, 110)); // gold
+                CheckUpdateButton.Content = "Install Update";
+            }
+            else
+            {
+                // No installer asset found — fallback to opening release page
+                UpdateStatusText.Text = $"v{newVersion} available! Click here to download.";
+                UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(200, 170, 110));
+                UpdateStatusText.Cursor = new Cursor(StandardCursorType.Hand);
+                UpdateStatusText.PointerPressed -= UpdateStatusText_PointerPressed;
+                UpdateStatusText.PointerPressed += UpdateStatusText_PointerPressed;
+            }
         }
         else
         {
@@ -211,8 +233,41 @@ public partial class SettingsWindow : Window
             UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(107, 97, 86)); // #6b6156
         }
 
-        CheckUpdateButton.Content = "Check for Updates";
+        if (_installerUrl == null)
+            CheckUpdateButton.Content = "Check for Updates";
         CheckUpdateButton.IsEnabled = true;
+    }
+
+    private async Task DownloadAndInstallAsync()
+    {
+        if (_installerUrl == null) return;
+
+        CheckUpdateButton.IsEnabled = false;
+        CheckUpdateButton.Content = "Downloading...";
+        UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(200, 170, 110));
+
+        var progress = new Progress<int>(percent =>
+        {
+            UpdateStatusText.Text = $"Downloading... {percent}%";
+        });
+
+        var installerPath = await _updateCheckService.DownloadInstallerAsync(_installerUrl, progress);
+
+        if (installerPath != null)
+        {
+            UpdateStatusText.Text = "Starting installer...";
+            Process.Start(new ProcessStartInfo(installerPath) { UseShellExecute = true });
+            // Close the app so the installer can replace files
+            if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.Shutdown();
+        }
+        else
+        {
+            UpdateStatusText.Text = "Download failed — try again";
+            UpdateStatusText.Foreground = new SolidColorBrush(Color.FromRgb(168, 107, 107));
+            CheckUpdateButton.Content = "Install Update";
+            CheckUpdateButton.IsEnabled = true;
+        }
     }
 
     private void UpdateStatusText_PointerPressed(object? sender, PointerPressedEventArgs e)
