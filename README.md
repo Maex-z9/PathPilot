@@ -49,7 +49,22 @@ dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 
 ## Screenshots
 
-*Coming soon*
+### Main Window — Gems & Items
+![Main Window](screenshots/main-window.png)
+
+### Skill Tree Viewer
+![Skill Tree](screenshots/skill-tree.png)
+
+![Skill Tree Detail](screenshots/skill-tree-detail.png)
+
+### Ingame Overlay
+![Overlay — Gems](screenshots/overlay.png)
+
+![Overlay — Quests](screenshots/overlay-quests.png)
+
+![Overlay — Trials](screenshots/overlay-trials.png)
+
+![Overlay — Labs](screenshots/overlay-labs.png)
 
 ## License
 
