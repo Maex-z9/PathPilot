@@ -189,6 +189,12 @@ public class SkillTreeDataService
         node.IsJewelSocket = element.TryGetProperty("isJewelSocket", out var js) && js.GetBoolean();
         node.IsMastery = element.TryGetProperty("isMastery", out var ms) && ms.GetBoolean();
 
+        if (element.TryGetProperty("classStartIndex", out var csi))
+        {
+            node.IsClassStart = true;
+            node.ClassStartIndex = csi.GetInt32();
+        }
+
         // Position data
         if (element.TryGetProperty("group", out var group))
             node.Group = group.GetInt32();
@@ -273,7 +279,7 @@ public class SkillTreeDataService
             "keystoneActive", "keystoneInactive",
             "mastery", "masteryConnected", "masteryActiveSelected",
             "masteryInactive", "masteryActiveEffect",
-            "frame", "jewel", "groupBackground"
+            "frame", "jewel", "groupBackground", "startNode"
         };
 
         foreach (var spriteType in spriteTypes)

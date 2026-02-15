@@ -107,6 +107,8 @@ public class PassiveNode
     public bool IsNotable { get; set; }
     public bool IsJewelSocket { get; set; }
     public bool IsMastery { get; set; }
+    public bool IsClassStart { get; set; }
+    public int? ClassStartIndex { get; set; }
 
     /// <summary>
     /// Icon sprite key (e.g. "Art/2DArt/SkillIcons/passives/2handeddamage.png")

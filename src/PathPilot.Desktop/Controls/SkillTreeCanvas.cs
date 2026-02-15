@@ -893,6 +893,13 @@ public class SkillTreeCanvas : Control
                 var y = node.CalculatedY.Value;
                 var isAllocated = _allocatedNodeIds.Contains(node.Id);
 
+                // Draw class start node background sprite
+                if (node.IsClassStart && useSprites)
+                {
+                    TryDrawClassStartSprite(canvas, node, x, y, bitmapPaint);
+                    continue; // Start nodes don't render as normal nodes
+                }
+
                 if (useSprites)
                 {
                     if (node.IsMastery)
@@ -909,7 +916,8 @@ public class SkillTreeCanvas : Control
 
                 // Fallback: colored circles (sizes match halved sprite scale)
                 float radius;
-                if (node.IsKeystone) radius = 25f;
+                if (node.IsClassStart) radius = 40f;
+                else if (node.IsKeystone) radius = 25f;
                 else if (node.IsNotable) radius = 18f;
                 else if (node.IsJewelSocket) radius = 15f;
                 else if (node.IsMastery) radius = 25f;
@@ -998,6 +1006,40 @@ public class SkillTreeCanvas : Control
                 iconKey = node.Icon;
 
             if (!sheetData.Coords.TryGetValue(iconKey, out var coord))
+                return false;
+
+            var halfW = coord.W / 2f * _spriteScale;
+            var halfH = coord.H / 2f * _spriteScale;
+            var srcRect = new SKRect(coord.X, coord.Y, coord.X + coord.W, coord.Y + coord.H);
+            var destRect = new SKRect(x - halfW, y - halfH, x + halfW, y + halfH);
+
+            canvas.DrawBitmap(bitmap, srcRect, destRect, bitmapPaint);
+            return true;
+        }
+
+        private static readonly string[] ClassStartSpriteKeys =
+        {
+            "centerscion",    // 0
+            "centermarauder", // 1
+            "centerranger",   // 2
+            "centerwitch",    // 3
+            "centerduelist",  // 4
+            "centertemplar",  // 5
+            "centershadow"    // 6
+        };
+
+        private bool TryDrawClassStartSprite(SKCanvas canvas, PassiveNode node, float x, float y, SKPaint? bitmapPaint)
+        {
+            if (!_spriteCoords.TryGetValue("startNode", out var sheetData) ||
+                !_spriteBitmaps.TryGetValue("startNode", out var bitmap))
+                return false;
+
+            var classIndex = node.ClassStartIndex ?? -1;
+            if (classIndex < 0 || classIndex >= ClassStartSpriteKeys.Length)
+                return false;
+
+            var spriteKey = ClassStartSpriteKeys[classIndex];
+            if (!sheetData.Coords.TryGetValue(spriteKey, out var coord))
                 return false;
 
             var halfW = coord.W / 2f * _spriteScale;
