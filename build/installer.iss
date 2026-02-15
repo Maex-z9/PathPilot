@@ -3,7 +3,9 @@
 ; Build with: iscc build/installer.iss
 
 #define MyAppName "PathPilot"
-#define MyAppVersion "1.0.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "1.0.0"
+#endif
 #define MyAppPublisher "PathPilot"
 #define MyAppExeName "PathPilot.Desktop.exe"
 
