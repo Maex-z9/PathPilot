@@ -520,31 +520,74 @@ public partial class MainWindow : Window
     {
         if (_currentBuild == null) return;
 
-        // Enrich gems with IconUrl from database if missing (e.g. loaded from old saves)
-        var allGems = _currentBuild.SkillSets
+        // Enrich all gems with data from database if missing (e.g. loaded from old saves)
+        var allGemsFlat = _currentBuild.SkillSets
             .SelectMany(ss => ss.LinkGroups)
             .SelectMany(lg => lg.Gems)
-            .GroupBy(g => g.Name)
-            .Select(g => g.First())
             .ToList();
 
-        foreach (var gem in allGems)
+        foreach (var gem in allGemsFlat)
         {
+            var gemInfo = _gemDataService.GetGemInfo(gem.Name);
+
+            // Prefer entry with sources (e.g. "Fortify" matches a sourceless status entry,
+            // but "Fortify Support" has actual quest/vendor data)
+            if (gemInfo != null && gemInfo.Sources.Count == 0 && !gem.Name.EndsWith(" Support"))
+            {
+                var supportInfo = _gemDataService.GetGemInfo(gem.Name + " Support");
+                if (supportInfo != null && supportInfo.Sources.Count > 0)
+                    gemInfo = supportInfo;
+            }
+
             if (string.IsNullOrEmpty(gem.IconUrl))
             {
-                var gemInfo = _gemDataService.GetGemInfo(gem.Name);
                 if (gemInfo?.IconUrl != null)
                     gem.IconUrl = gemInfo.IconUrl;
             }
+
+            // Fallback: construct wiki URL from gem name for gems not in database
+            // (e.g. Awakened gems, removed gems)
+            if (string.IsNullOrEmpty(gem.IconUrl))
+            {
+                var wikiName = Uri.EscapeDataString(gem.Name.Replace(" ", "_"));
+                gem.IconUrl = $"https://www.poewiki.net/wiki/Special:FilePath/{wikiName}_inventory_icon.png";
+            }
+
+            // Update acquisition info from database (fixes stale text from old saves)
+            if (gemInfo != null)
+            {
+                var earliestSource = gemInfo.Sources.OrderBy(s => s.Act).FirstOrDefault();
+                if (earliestSource != null)
+                    gem.AcquisitionInfo = $"Act {earliestSource.Act}: {earliestSource.QuestName ?? "Vendor"} ({earliestSource.VendorName})";
+                else
+                    gem.AcquisitionInfo = "Drop only";
+            }
+            else if (gem.AcquisitionInfo.Contains("unknown", StringComparison.OrdinalIgnoreCase))
+            {
+                gem.AcquisitionInfo = "Drop only";
+            }
         }
 
-        allGems = allGems.Where(g => !string.IsNullOrEmpty(g.IconUrl)).ToList();
+        // Deduplicate for icon downloads
+        var allGems = allGemsFlat
+            .GroupBy(g => g.Name)
+            .Select(g => g.First())
+            .ToList();
 
         Console.WriteLine($"Loading icons for {allGems.Count} gems...");
 
         var tasks = allGems.Select(async gem =>
         {
             var iconPath = await _gemIconService.GetIconPathAsync(gem.Name, gem.IconUrl);
+
+            // Retry with " Support" suffix if download failed (e.g. "Fortify" → "Fortify_Support")
+            if (iconPath == null && !gem.Name.EndsWith(" Support"))
+            {
+                var supportName = gem.Name.Replace(" ", "_") + "_Support";
+                var supportUrl = $"https://www.poewiki.net/wiki/Special:FilePath/{Uri.EscapeDataString(supportName)}_inventory_icon.png";
+                iconPath = await _gemIconService.GetIconPathAsync(gem.Name, supportUrl);
+            }
+
             return (gem.Name, iconPath);
         });
 

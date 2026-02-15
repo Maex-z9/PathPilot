@@ -212,7 +212,7 @@ namespace PathPilot.Core.Parsers
                 // Fallback: try to infer from gem name
                 gem.Type = gem.Name.Contains("Support") ? GemType.Support : GemType.Active;
                 gem.Color = SocketColor.White;
-                gem.AcquisitionInfo = "Source unknown - gem not in database";
+                gem.AcquisitionInfo = "Drop only";
             }
         }
 
