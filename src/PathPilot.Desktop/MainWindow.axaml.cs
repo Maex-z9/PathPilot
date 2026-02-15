@@ -276,14 +276,16 @@ public partial class MainWindow : Window
 
     private async void OpenTreeButton_Click(object? sender, RoutedEventArgs e)
     {
-        var activeTreeSet = _currentBuild?.ActiveTreeSet;
+        if (_currentBuild == null)
+            return;
+
+        var activeTreeSet = _currentBuild.ActiveTreeSet;
         if (activeTreeSet == null || string.IsNullOrEmpty(activeTreeSet.TreeUrl))
             return;
 
         try
         {
-            var title = $"Skill Tree - {activeTreeSet.Title}";
-            var treeWindow = new TreeViewerWindow(activeTreeSet.TreeUrl, title, activeTreeSet.AllocatedNodes);
+            var treeWindow = new TreeViewerWindow(_currentBuild);
             await treeWindow.ShowDialog(this);
         }
         catch (Exception ex)

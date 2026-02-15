@@ -25,6 +25,8 @@ public partial class TreeViewerWindow : Window
     private const double ZoomStep = 0.05;
     private const double MinZoom = 0.02;
     private const double MaxZoom = 2.0;
+    private Build? _build;
+    private bool _suppressSelectionChanged;
 
     public TreeViewerWindow()
     {
@@ -59,11 +61,77 @@ public partial class TreeViewerWindow : Window
         Opened += OnWindowOpened;
     }
 
+    public TreeViewerWindow(Build build) : this()
+    {
+        _build = build;
+
+        var activeTreeSet = build.ActiveTreeSet;
+        if (activeTreeSet != null && !string.IsNullOrEmpty(activeTreeSet.TreeUrl))
+        {
+            _treeUrl = activeTreeSet.TreeUrl;
+            TreeTitleText.Text = $"Skill Tree - {activeTreeSet.Title}";
+
+            var decoded = TreeUrlDecoder.DecodeTreeUrl(activeTreeSet.TreeUrl);
+            _allocatedNodeIds = new HashSet<int>(decoded.AllocatedNodes);
+            _masterySelections = decoded.MasterySelections;
+            Console.WriteLine($"TreeViewer decoded {decoded.AllocatedNodes.Count} nodes, {decoded.MasterySelections.Count} mastery selections from URL");
+        }
+
+        // Populate ComboBox with tree set names
+        if (build.TreeSets.Count > 1)
+        {
+            _suppressSelectionChanged = true;
+            TreeSetSelector.ItemsSource = build.TreeSets.Select(t => t.Title).ToList();
+            TreeSetSelector.SelectedIndex = build.ActiveTreeSetIndex;
+            TreeSetSelector.IsVisible = true;
+            _suppressSelectionChanged = false;
+        }
+
+        // Load tree when window opens
+        Opened += OnWindowOpened;
+    }
+
     private async void OnWindowOpened(object? sender, EventArgs e)
     {
         await LoadTreeAsync();
     }
 
+    private void TreeSetSelector_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressSelectionChanged || _build == null || TreeSetSelector.SelectedIndex < 0)
+            return;
+
+        var selectedIndex = TreeSetSelector.SelectedIndex;
+        if (selectedIndex >= 0 && selectedIndex < _build.TreeSets.Count)
+        {
+            SwitchToTreeSet(_build.TreeSets[selectedIndex]);
+        }
+    }
+
+    private void SwitchToTreeSet(SkillTreeSet treeSet)
+    {
+        if (string.IsNullOrEmpty(treeSet.TreeUrl))
+            return;
+
+        _treeUrl = treeSet.TreeUrl;
+        TreeTitleText.Text = $"Skill Tree - {treeSet.Title}";
+
+        var decoded = TreeUrlDecoder.DecodeTreeUrl(treeSet.TreeUrl);
+        _allocatedNodeIds = new HashSet<int>(decoded.AllocatedNodes);
+        _masterySelections = decoded.MasterySelections;
+
+        Console.WriteLine($"Switched to tree set '{treeSet.Title}': {decoded.AllocatedNodes.Count} nodes, {decoded.MasterySelections.Count} mastery selections");
+
+        // Update canvas with new data (tree data is already loaded, just update allocated nodes)
+        TreeCanvas.AllocatedNodeIds = _allocatedNodeIds;
+        TreeCanvas.MasterySelections = _masterySelections;
+
+        // Re-center on the new allocated nodes
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            TreeCanvas.CenterOnAllocatedNodes();
+        }, Avalonia.Threading.DispatcherPriority.Loaded);
+    }
 
     private async Task LoadTreeAsync()
     {

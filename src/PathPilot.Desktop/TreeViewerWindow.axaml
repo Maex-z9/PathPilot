@@ -18,6 +18,14 @@
                                FontWeight="Bold"
                                Foreground="White"
                                VerticalAlignment="Center"/>
+                    <ComboBox Name="TreeSetSelector"
+                              IsVisible="False"
+                              Background="#404040"
+                              Foreground="White"
+                              FontSize="13"
+                              MinWidth="150"
+                              VerticalAlignment="Center"
+                              SelectionChanged="TreeSetSelector_SelectionChanged"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
