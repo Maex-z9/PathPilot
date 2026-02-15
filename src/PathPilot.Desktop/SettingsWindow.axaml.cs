@@ -75,14 +75,16 @@ public partial class SettingsWindow : Window
 
         _recordingButton = button;
         button.Content = "Press key...";
-        button.Background = new SolidColorBrush(Color.FromRgb(255, 107, 53)); // Orange
+        button.Background = new SolidColorBrush(Color.FromRgb(200, 170, 110)); // Gold recording
+        button.Foreground = new SolidColorBrush(Color.FromRgb(12, 11, 10));   // Dark text
     }
 
     private void StopRecording(bool success)
     {
         if (_recordingButton != null)
         {
-            _recordingButton.Background = new SolidColorBrush(Color.FromRgb(64, 64, 64));
+            _recordingButton.Background = new SolidColorBrush(Color.FromRgb(42, 37, 32));    // #2a2520
+            _recordingButton.Foreground = new SolidColorBrush(Color.FromRgb(224, 214, 194)); // #e0d6c2
             _recordingButton = null;
         }
 

@@ -4,9 +4,15 @@
              x:Class="PathPilot.Desktop.App">
     <Application.Styles>
         <FluentTheme />
+
+        <!-- Global PoE Button Style -->
+        <Style Selector="Button">
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
     </Application.Styles>
 
     <Application.Resources>
+        <!-- Converters -->
         <converters:GemColorConverter x:Key="GemColorConverter"/>
         <converters:StringNotEmptyConverter x:Key="StringNotEmptyConverter"/>
         <converters:SupportFontWeightConverter x:Key="SupportFontWeightConverter"/>
@@ -14,5 +20,28 @@
         <converters:OverlaySupportColorConverter x:Key="OverlaySupportColorConverter"/>
         <converters:CompletedTextDecorationConverter x:Key="CompletedTextDecorationConverter"/>
         <converters:GemIconPathToBitmapConverter x:Key="GemIconBitmapConverter"/>
+
+        <!-- PoE Color Palette: Base Colors -->
+        <Color x:Key="PoeWindowBg">#0c0b0a</Color>
+        <Color x:Key="PoePanelBg">#1a1816</Color>
+        <Color x:Key="PoeCardBg">#15130f</Color>
+        <Color x:Key="PoeInnerBg">#0f0e0c</Color>
+        <Color x:Key="PoeSurfaceBg">#1e1b17</Color>
+
+        <!-- PoE Color Palette: Accent Colors -->
+        <Color x:Key="PoeGold">#c8aa6e</Color>
+        <Color x:Key="PoeBrightGold">#e8d5a3</Color>
+        <Color x:Key="PoeMutedGold">#8c7a4e</Color>
+        <Color x:Key="PoeAccentRed">#c83030</Color>
+
+        <!-- PoE Color Palette: Text Colors -->
+        <Color x:Key="PoeTextPrimary">#e0d6c2</Color>
+        <Color x:Key="PoeTextSecondary">#a89b8c</Color>
+        <Color x:Key="PoeTextTertiary">#6b6156</Color>
+
+        <!-- PoE Color Palette: Interactive Colors -->
+        <Color x:Key="PoeButtonBg">#2a2520</Color>
+        <Color x:Key="PoeButtonHover">#3a3530</Color>
+        <Color x:Key="PoeButtonBorder">#5a4f3d</Color>
     </Application.Resources>
 </Application>

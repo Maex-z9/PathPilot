@@ -7,56 +7,61 @@
         x:Class="PathPilot.Desktop.MainWindow"
         Title="PathPilot - Path of Exile Build Guide"
         Width="1200" Height="800"
-        Background="#1e1e1e">
+        Background="#0c0b0a">
 
     <Grid RowDefinitions="Auto,*">
         <!-- Header -->
-        <Border Grid.Row="0" Background="#2d2d2d" Padding="20,15">
+        <Border Grid.Row="0" Background="#1a1816" Padding="20,15"
+                BorderBrush="#33c8aa6e" BorderThickness="0,0,0,1">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
-                    <TextBlock Text="📊" FontSize="24" VerticalAlignment="Center"/>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="PathPilot" FontSize="20" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock Name="BuildTitleText" Text="Unnamed Build" FontSize="12" Foreground="#888"/>
+                        <TextBlock Text="PathPilot" FontSize="20" FontWeight="Bold" Foreground="#c8aa6e"/>
+                        <TextBlock Name="BuildTitleText" Text="Unnamed Build" FontSize="12" Foreground="#a89b8c"/>
                     </StackPanel>
                 </StackPanel>
-                
+
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
                     <Button Name="LoadButton"
                             Content="Load"
                             Click="LoadButton_Click"
-                            Background="#404040"
-                            Foreground="White"
+                            Background="#2a2520"
+                            Foreground="#e0d6c2"
+                            BorderBrush="#5a4f3d"
                             Padding="15,8"
                             CornerRadius="5"/>
                     <Button Name="SaveButton"
                             Content="Save"
                             Click="SaveButton_Click"
-                            Background="#2d8a2d"
-                            Foreground="White"
+                            Background="#2d6b2d"
+                            Foreground="#e0d6c2"
+                            BorderBrush="#3d8a3d"
                             Padding="15,8"
                             CornerRadius="5"
                             IsEnabled="False"/>
                     <Button Name="ImportButton"
                             Content="Import"
                             Click="ImportButton_Click"
-                            Background="#4a9eff"
-                            Foreground="White"
+                            Background="#3d3520"
+                            Foreground="#c8aa6e"
+                            BorderBrush="#c8aa6e"
                             Padding="15,8"
                             CornerRadius="5"/>
                     <Button Name="OverlayButton"
                             Content="Overlay"
                             Click="OverlayButton_Click"
-                            Background="#ff6b35"
-                            Foreground="White"
+                            Background="#2a2520"
+                            Foreground="#e0d6c2"
+                            BorderBrush="#5a4f3d"
                             Padding="15,8"
                             CornerRadius="5"
                             ToolTip.Tip="Show overlay (F11 to toggle)"/>
                     <Button Name="SettingsButton"
-                            Content="⚙"
+                            Content="&#x2699;"
                             Click="SettingsButton_Click"
-                            Background="#404040"
-                            Foreground="White"
+                            Background="#2a2520"
+                            Foreground="#a89b8c"
+                            BorderBrush="#5a4f3d"
                             FontSize="18"
                             Padding="12,6"
                             CornerRadius="5"
@@ -69,12 +74,13 @@
         <ScrollViewer Grid.Row="1" Padding="20">
             <StackPanel Spacing="20">
                 <!-- Loadout Selector and Tree Info -->
-                <Border Background="#252525" CornerRadius="8" Padding="20">
+                <Border Background="#15130f" CornerRadius="8" Padding="20"
+                        BorderBrush="#2a2520" BorderThickness="1">
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <!-- Loadout Selector -->
                         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="15">
                             <TextBlock Text="Loadout:"
-                                       Foreground="#aaa"
+                                       Foreground="#8c7a4e"
                                        FontSize="16"
                                        VerticalAlignment="Center"/>
                             <ComboBox Name="LoadoutSelector"
@@ -86,18 +92,18 @@
                         <!-- Tree Info -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="20">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="🌳" FontSize="16" VerticalAlignment="Center"/>
                                 <TextBlock Name="TreePointsText"
                                            Text="Points: --"
-                                           Foreground="#4aff9d"
+                                           Foreground="#c8aa6e"
                                            FontSize="14"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
                             <Button Name="OpenTreeButton"
                                     Content="Open Tree"
                                     Click="OpenTreeButton_Click"
-                                    Background="#6a4aff"
-                                    Foreground="White"
+                                    Background="#2a2520"
+                                    Foreground="#c8aa6e"
+                                    BorderBrush="#5a4f3d"
                                     Padding="12,6"
                                     CornerRadius="5"
                                     IsEnabled="False"/>
@@ -107,51 +113,56 @@
 
                 <Grid ColumnDefinitions="2*,20,*">
                     <!-- Left Column: Gems -->
-                    <Border Grid.Column="0" Background="#252525" CornerRadius="8">
+                    <Border Grid.Column="0" Background="#15130f" CornerRadius="8"
+                            BorderBrush="#2a2520" BorderThickness="1">
                         <StackPanel Spacing="15" Margin="25">
-                            <TextBlock Text="💎 Skill Gems" FontSize="20" FontWeight="Bold" Foreground="White"/>
-                            
+                            <TextBlock Text="Skill Gems" FontSize="20" FontWeight="Bold" Foreground="#c8aa6e"/>
+
                             <!-- Grouped by Link Groups -->
                             <ItemsControl Name="LinkGroupsListBox">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="models:GemLinkGroup">
-                                        <Border Background="#1a1a1a" 
-                                                CornerRadius="8" 
+                                        <Border Background="#0f0e0c"
+                                                CornerRadius="8"
                                                 Margin="0,0,0,15"
-                                                Padding="15">
+                                                Padding="15"
+                                                BorderBrush="#1e1b17"
+                                                BorderThickness="1">
                                             <StackPanel Spacing="10">
                                                 <!-- Link Group Header -->
                                                 <Grid ColumnDefinitions="Auto,*,Auto">
                                                     <Border Grid.Column="0"
-                                                            Background="#2a2a2a"
+                                                            Background="#1a1816"
                                                             CornerRadius="4"
                                                             Padding="8,4"
                                                             Margin="0,0,10,0">
-                                                        <TextBlock FontSize="11" 
-                                                                   Foreground="#aaa"
+                                                        <TextBlock FontSize="11"
+                                                                   Foreground="#8c7a4e"
                                                                    FontWeight="SemiBold">
-                                                            <Run Text="🔗 Link Group "/>
+                                                            <Run Text="Link Group "/>
                                                             <Run Text="{Binding Key}"/>
                                                         </TextBlock>
                                                     </Border>
-                                                    
+
                                                     <TextBlock Grid.Column="2"
                                                                FontSize="11"
-                                                               Foreground="#666"
+                                                               Foreground="#6b6156"
                                                                VerticalAlignment="Center">
                                                         <Run Text="{Binding Value.Count}"/>
                                                         <Run Text=" gems"/>
                                                     </TextBlock>
                                                 </Grid>
-                                                
+
                                                 <!-- Gems in this Link Group -->
                                                 <ItemsControl ItemsSource="{Binding Value}">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate DataType="models:Gem">
-                                                            <Border Background="#252525" 
-                                                                    CornerRadius="5" 
+                                                            <Border Background="#15130f"
+                                                                    CornerRadius="5"
                                                                     Margin="0,0,0,8"
-                                                                    Padding="12">
+                                                                    Padding="12"
+                                                                    BorderBrush="#1e1b17"
+                                                                    BorderThickness="1">
                                                                 <StackPanel Spacing="6">
                                                                     <!-- Gem Name with Color Indicator -->
                                                                     <Grid ColumnDefinitions="Auto,Auto,*">
@@ -173,46 +184,45 @@
                                                                                 <SolidColorBrush Color="{Binding Color, Converter={StaticResource GemColorConverter}}" />
                                                                             </Border.Background>
                                                                         </Border>
-                                                                        
+
                                                                         <!-- Indent for Support Gems -->
                                                                         <TextBlock Grid.Column="1"
-                                                                                   Text="  └ "
+                                                                                   Text="  &#x2514; "
                                                                                    FontSize="14"
-                                                                                   Foreground="#666"
+                                                                                   Foreground="#6b6156"
                                                                                    VerticalAlignment="Center"
                                                                                    IsVisible="{Binding IsSupport}"/>
-                                                                        
+
                                                                         <!-- Gem Name -->
-                                                                        <TextBlock Grid.Column="2" 
-                                                                                   FontSize="15" 
+                                                                        <TextBlock Grid.Column="2"
+                                                                                   FontSize="15"
                                                                                    FontWeight="{Binding IsSupport, Converter={StaticResource SupportFontWeightConverter}}"
-                                                                                   Foreground="White"
+                                                                                   Foreground="#e0d6c2"
                                                                                    VerticalAlignment="Center">
                                                                             <Run Text="{Binding Name}"/>
                                                                         </TextBlock>
                                                                     </Grid>
-                                                                    
+
                                                                     <!-- Stats -->
                                                                     <StackPanel Orientation="Horizontal" Spacing="12" Margin="20,0,0,0">
                                                                         <TextBlock FontSize="12" Foreground="#4a9eff">
                                                                             <Run Text="Lv "/>
                                                                             <Run Text="{Binding Level}"/>
                                                                         </TextBlock>
-                                                                        <TextBlock FontSize="12" Foreground="#4aff9d">
+                                                                        <TextBlock FontSize="12" Foreground="#c8aa6e">
                                                                             <Run Text="Q "/>
                                                                             <Run Text="{Binding Quality}"/>
                                                                             <Run Text="%"/>
                                                                         </TextBlock>
-                                                                        <TextBlock Text="{Binding Type}" 
-                                                                                   FontSize="11" 
-                                                                                   Foreground="#888"/>
+                                                                        <TextBlock Text="{Binding Type}"
+                                                                                   FontSize="11"
+                                                                                   Foreground="#6b6156"/>
                                                                     </StackPanel>
-                                                                    
+
                                                                     <!-- Acquisition Info -->
-                                                                    <TextBlock FontSize="11" 
-                                                                               Foreground="#ff9d4a" 
+                                                                    <TextBlock FontSize="11"
+                                                                               Foreground="#a89b8c"
                                                                                Margin="20,0,0,0">
-                                                                        <Run Text="📍 "/>
                                                                         <Run Text="{Binding AcquisitionInfo}"/>
                                                                     </TextBlock>
                                                                 </StackPanel>
@@ -229,16 +239,18 @@
                     </Border>
 
                     <!-- Right Column: Items -->
-                    <Border Grid.Column="2" Background="#252525" CornerRadius="8">
+                    <Border Grid.Column="2" Background="#15130f" CornerRadius="8"
+                            BorderBrush="#2a2520" BorderThickness="1">
                         <StackPanel Spacing="15" Margin="25">
-                            <TextBlock Text="⚔️ Items" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="Items" FontSize="20" FontWeight="Bold" Foreground="#c8aa6e"/>
                             <ItemsControl Name="ItemsListBox">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="models:Item">
-                                        <Border Background="#1a1a1a" CornerRadius="5" Margin="0,0,0,10" Padding="15">
+                                        <Border Background="#0f0e0c" CornerRadius="5" Margin="0,0,0,10" Padding="15"
+                                                BorderBrush="#1e1b17" BorderThickness="1">
                                             <ToolTip.Tip>
-                                                <Border Background="#0a0a0a"
-                                                        BorderBrush="#444"
+                                                <Border Background="#0a0908"
+                                                        BorderBrush="#5a4f3d"
                                                         BorderThickness="1"
                                                         CornerRadius="5"
                                                         Padding="12"
@@ -246,13 +258,13 @@
                                                     <TextBlock Text="{Binding FormattedText}"
                                                                FontFamily="Consolas, monospace"
                                                                FontSize="12"
-                                                               Foreground="#ddd"
+                                                               Foreground="#e0d6c2"
                                                                TextWrapping="Wrap"/>
                                                 </Border>
                                             </ToolTip.Tip>
                                             <StackPanel Spacing="6">
                                                 <!-- Slot -->
-                                                <TextBlock Text="{Binding Slot}" FontSize="11" Foreground="#666"/>
+                                                <TextBlock Text="{Binding Slot}" FontSize="11" Foreground="#6b6156"/>
 
                                                 <!-- Item Name with Rarity Color -->
                                                 <TextBlock Text="{Binding Name}"
@@ -263,7 +275,7 @@
                                                 <!-- Base Type -->
                                                 <TextBlock Text="{Binding BaseType}"
                                                            FontSize="12"
-                                                           Foreground="#aaa"
+                                                           Foreground="#a89b8c"
                                                            IsVisible="{Binding BaseType, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
 
                                                 <!-- Mods -->

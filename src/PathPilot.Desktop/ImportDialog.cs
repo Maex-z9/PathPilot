@@ -21,6 +21,7 @@ public partial class ImportDialog : Window
         Title = "Import Build";
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         CanResize = false;
+        Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#0c0b0a"));
 
         var mainPanel = new StackPanel
         {
@@ -33,7 +34,8 @@ public partial class ImportDialog : Window
         {
             Text = "Import Path of Building Build",
             FontSize = 20,
-            FontWeight = Avalonia.Media.FontWeight.Bold
+            FontWeight = Avalonia.Media.FontWeight.Bold,
+            Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#c8aa6e"))
         });
 
         // Instructions
@@ -41,7 +43,7 @@ public partial class ImportDialog : Window
         {
             Text = "Paste your Path of Building code or pobb.in URL below:",
             FontSize = 14,
-            Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#888888"))
+            Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#a89b8c"))
         });
 
         // Input TextBox
@@ -60,7 +62,7 @@ public partial class ImportDialog : Window
         {
             Text = "Examples:\n• https://pobb.in/abc123\n• eNqdWQtv2zgS/...",
             FontSize = 12,
-            Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#666666"))
+            Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#6b6156"))
         });
 
         // Buttons
@@ -76,7 +78,8 @@ public partial class ImportDialog : Window
         {
             Content = "Cancel",
             Padding = new Avalonia.Thickness(20, 10),
-            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#404040"))
+            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#2a2520")),
+            Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#a89b8c"))
         };
         cancelButton.Click += CancelButton_Click;
 
@@ -84,8 +87,8 @@ public partial class ImportDialog : Window
         {
             Content = "Import",
             Padding = new Avalonia.Thickness(20, 10),
-            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#0066cc")),
-            Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.White),
+            Background = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#3d3520")),
+            Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#c8aa6e")),
             FontWeight = Avalonia.Media.FontWeight.Bold
         };
         importButton.Click += ImportButton_Click;

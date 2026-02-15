@@ -31,8 +31,12 @@ public partial class OverlayWindow : Window
 
     private enum QuestCategory { SkillPoints, Trials, Labs }
 
-    private static readonly SolidColorBrush ActiveTabBrush = new(Color.FromRgb(74, 158, 255));
-    private static readonly SolidColorBrush InactiveTabBrush = new(Color.FromRgb(64, 64, 64));
+    private static readonly SolidColorBrush ActiveTabBrush = new(Color.FromRgb(61, 53, 32));   // #3d3520
+    private static readonly SolidColorBrush InactiveTabBrush = new(Color.FromRgb(42, 37, 32)); // #2a2520
+    private static readonly SolidColorBrush ActiveTabForeground = new(Color.FromRgb(200, 170, 110));  // #c8aa6e
+    private static readonly SolidColorBrush InactiveTabForeground = new(Color.FromRgb(168, 155, 140)); // #a89b8c
+    private static readonly SolidColorBrush ActiveTabBorder = new(Color.FromRgb(200, 170, 110));  // #c8aa6e
+    private static readonly SolidColorBrush InactiveTabBorder = new(Color.FromRgb(90, 79, 61));   // #5a4f3d
 
     public OverlayWindow(OverlaySettings settings)
     {
@@ -132,8 +136,14 @@ public partial class OverlayWindow : Window
         _currentQuestCategory = category;
 
         SkillPointsTabButton.Background = category == QuestCategory.SkillPoints ? ActiveTabBrush : InactiveTabBrush;
+        SkillPointsTabButton.Foreground = category == QuestCategory.SkillPoints ? ActiveTabForeground : InactiveTabForeground;
+        SkillPointsTabButton.BorderBrush = category == QuestCategory.SkillPoints ? ActiveTabBorder : InactiveTabBorder;
         TrialsTabButton.Background = category == QuestCategory.Trials ? ActiveTabBrush : InactiveTabBrush;
+        TrialsTabButton.Foreground = category == QuestCategory.Trials ? ActiveTabForeground : InactiveTabForeground;
+        TrialsTabButton.BorderBrush = category == QuestCategory.Trials ? ActiveTabBorder : InactiveTabBorder;
         LabsTabButton.Background = category == QuestCategory.Labs ? ActiveTabBrush : InactiveTabBrush;
+        LabsTabButton.Foreground = category == QuestCategory.Labs ? ActiveTabForeground : InactiveTabForeground;
+        LabsTabButton.BorderBrush = category == QuestCategory.Labs ? ActiveTabBorder : InactiveTabBorder;
 
         UpdateQuestDisplay();
     }
@@ -158,7 +168,11 @@ public partial class OverlayWindow : Window
         GemsPanel.IsVisible = true;
         QuestsPanel.IsVisible = false;
         GemsTabButton.Background = ActiveTabBrush;
+        GemsTabButton.Foreground = ActiveTabForeground;
+        GemsTabButton.BorderBrush = ActiveTabBorder;
         QuestsTabButton.Background = InactiveTabBrush;
+        QuestsTabButton.Foreground = InactiveTabForeground;
+        QuestsTabButton.BorderBrush = InactiveTabBorder;
     }
 
     private void QuestsTabButton_Click(object? sender, RoutedEventArgs e)
@@ -166,7 +180,11 @@ public partial class OverlayWindow : Window
         GemsPanel.IsVisible = false;
         QuestsPanel.IsVisible = true;
         GemsTabButton.Background = InactiveTabBrush;
+        GemsTabButton.Foreground = InactiveTabForeground;
+        GemsTabButton.BorderBrush = InactiveTabBorder;
         QuestsTabButton.Background = ActiveTabBrush;
+        QuestsTabButton.Foreground = ActiveTabForeground;
+        QuestsTabButton.BorderBrush = ActiveTabBorder;
     }
 
     private void UpdateHotkeyInfoText()
@@ -297,8 +315,8 @@ public partial class OverlayWindow : Window
     {
         ModeText.Text = _platform.IsClickThrough ? "Click-Through" : "Interactive";
         ModeText.Foreground = _platform.IsClickThrough
-            ? Avalonia.Media.Brushes.LightGreen
-            : Avalonia.Media.Brushes.Orange;
+            ? new SolidColorBrush(Color.FromRgb(200, 170, 110))   // Gold - click-through
+            : new SolidColorBrush(Color.FromRgb(232, 213, 163));  // Bright gold - interactive
     }
 
     public bool IsClickThrough => _platform.IsClickThrough;

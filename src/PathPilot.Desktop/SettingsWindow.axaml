@@ -6,7 +6,7 @@
         Height="350"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
-        Background="#1e1e1e">
+        Background="#0c0b0a">
 
     <Grid RowDefinitions="Auto,*,Auto" Margin="20">
         <!-- Header -->
@@ -14,10 +14,10 @@
             <TextBlock Text="Settings"
                        FontSize="22"
                        FontWeight="Bold"
-                       Foreground="White"/>
+                       Foreground="#c8aa6e"/>
             <TextBlock Text="Configure overlay hotkeys and options"
                        FontSize="12"
-                       Foreground="#888"
+                       Foreground="#a89b8c"
                        Margin="0,5,0,0"/>
         </StackPanel>
 
@@ -25,22 +25,23 @@
         <ScrollViewer Grid.Row="1">
             <StackPanel Spacing="20">
                 <!-- Overlay Hotkeys Section -->
-                <Border Background="#252525" CornerRadius="8" Padding="15">
+                <Border Background="#15130f" CornerRadius="8" Padding="15"
+                        BorderBrush="#2a2520" BorderThickness="1">
                     <StackPanel Spacing="15">
                         <TextBlock Text="Overlay Hotkeys"
                                    FontSize="14"
                                    FontWeight="SemiBold"
-                                   Foreground="#4aff9d"/>
+                                   Foreground="#c8aa6e"/>
 
                         <!-- Toggle Overlay Hotkey -->
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
                             <StackPanel Grid.Column="0" Grid.Row="0">
                                 <TextBlock Text="Toggle Overlay"
                                            FontSize="13"
-                                           Foreground="White"/>
+                                           Foreground="#e0d6c2"/>
                                 <TextBlock Text="Show/hide the overlay"
                                            FontSize="11"
-                                           Foreground="#666"/>
+                                           Foreground="#6b6156"/>
                             </StackPanel>
                             <Button Name="ToggleHotkeyButton"
                                     Grid.Column="1"
@@ -49,8 +50,9 @@
                                     Click="ToggleHotkeyButton_Click"
                                     MinWidth="120"
                                     HorizontalContentAlignment="Center"
-                                    Background="#404040"
-                                    Foreground="White"
+                                    Background="#2a2520"
+                                    Foreground="#e0d6c2"
+                                    BorderBrush="#5a4f3d"
                                     Padding="10,8"
                                     CornerRadius="4"/>
                         </Grid>
@@ -60,10 +62,10 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Toggle Interactive"
                                            FontSize="13"
-                                           Foreground="White"/>
+                                           Foreground="#e0d6c2"/>
                                 <TextBlock Text="Switch between click-through and interactive mode"
                                            FontSize="11"
-                                           Foreground="#666"/>
+                                           Foreground="#6b6156"/>
                             </StackPanel>
                             <Button Name="InteractiveHotkeyButton"
                                     Grid.Column="1"
@@ -71,8 +73,9 @@
                                     Click="InteractiveHotkeyButton_Click"
                                     MinWidth="120"
                                     HorizontalContentAlignment="Center"
-                                    Background="#404040"
-                                    Foreground="White"
+                                    Background="#2a2520"
+                                    Foreground="#e0d6c2"
+                                    BorderBrush="#5a4f3d"
                                     Padding="10,8"
                                     CornerRadius="4"/>
                         </Grid>
@@ -80,21 +83,22 @@
                 </Border>
 
                 <!-- Overlay Position Section -->
-                <Border Background="#252525" CornerRadius="8" Padding="15">
+                <Border Background="#15130f" CornerRadius="8" Padding="15"
+                        BorderBrush="#2a2520" BorderThickness="1">
                     <StackPanel Spacing="15">
                         <TextBlock Text="Overlay Position"
                                    FontSize="14"
                                    FontWeight="SemiBold"
-                                   Foreground="#4aff9d"/>
+                                   Foreground="#c8aa6e"/>
 
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Reset Position"
                                            FontSize="13"
-                                           Foreground="White"/>
+                                           Foreground="#e0d6c2"/>
                                 <TextBlock Text="Move overlay back to top-left corner"
                                            FontSize="11"
-                                           Foreground="#666"/>
+                                           Foreground="#6b6156"/>
                             </StackPanel>
                             <Button Name="ResetPositionButton"
                                     Grid.Column="1"
@@ -102,8 +106,9 @@
                                     Click="ResetPositionButton_Click"
                                     MinWidth="120"
                                     HorizontalContentAlignment="Center"
-                                    Background="#404040"
-                                    Foreground="White"
+                                    Background="#2a2520"
+                                    Foreground="#e0d6c2"
+                                    BorderBrush="#5a4f3d"
                                     Padding="10,8"
                                     CornerRadius="4"/>
                         </Grid>
@@ -121,15 +126,17 @@
             <Button Name="CancelButton"
                     Content="Cancel"
                     Click="CancelButton_Click"
-                    Background="#404040"
-                    Foreground="White"
+                    Background="#2a2520"
+                    Foreground="#a89b8c"
+                    BorderBrush="#5a4f3d"
                     Padding="20,10"
                     CornerRadius="4"/>
             <Button Name="SaveButton"
                     Content="Save"
                     Click="SaveButton_Click"
-                    Background="#2d8a2d"
-                    Foreground="White"
+                    Background="#3d3520"
+                    Foreground="#c8aa6e"
+                    BorderBrush="#c8aa6e"
                     Padding="20,10"
                     CornerRadius="4"/>
         </StackPanel>

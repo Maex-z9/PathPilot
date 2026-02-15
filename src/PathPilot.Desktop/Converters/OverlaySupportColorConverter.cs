@@ -12,10 +12,10 @@ public class OverlaySupportColorConverter : IValueConverter
         if (value is bool isSupport)
         {
             return isSupport
-                ? new SolidColorBrush(Color.FromRgb(170, 170, 170))  // Gray for supports
-                : new SolidColorBrush(Color.FromRgb(255, 255, 255)); // White for active skills
+                ? new SolidColorBrush(Color.FromRgb(140, 132, 120))  // Warm gray for supports
+                : new SolidColorBrush(Color.FromRgb(224, 214, 194)); // Warm cream for active skills
         }
-        return new SolidColorBrush(Color.FromRgb(255, 255, 255));
+        return new SolidColorBrush(Color.FromRgb(224, 214, 194));
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
