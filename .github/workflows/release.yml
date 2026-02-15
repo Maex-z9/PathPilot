@@ -46,7 +46,7 @@ jobs:
 
       - name: Install Inno Setup
         shell: pwsh
-        run: choco install innosetup -y --no-progress --version=6.4.0
+        run: choco install innosetup -y --no-progress
 
       - name: Build installer
         shell: pwsh
