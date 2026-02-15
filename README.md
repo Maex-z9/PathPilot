@@ -1,56 +1,56 @@
 # PathPilot
 
-Ein Desktop-Tool für Path of Exile, das Spielern hilft, ihre Charaktere gemäß einem Path of Building Build zu entwickeln.
+A Path of Exile build guide desktop application that helps players develop their characters according to a Path of Building build.
 
 Built with .NET 10 and Avalonia UI.
 
 ## Features
 
-- **Build Import**: Path of Building Code oder pobb.in URLs importieren
-- **Save/Load**: Builds lokal speichern und laden
-- **Gem-Anzeige**: Skill Gems mit Level, Quality, Farben und Acquisition-Info (Quest/Vendor)
-- **Item-Anzeige**: Items mit Rarity-Farben, Mods und Tooltips
-- **Skill Tree Viewer**: Eingebetteter Browser zur Anzeige des Passive Trees
-- **Ingame Overlay**: Transparentes Overlay das über dem Spiel angezeigt wird
+- **Build Import**: Import Path of Building codes or pobb.in URLs
+- **Save/Load**: Save and load builds locally, auto-loads last build on startup
+- **Unified Loadout Selector**: Switch SkillSet, ItemSet, and TreeSet together
+- **Gem Display**: Skill gems with real PoE Wiki icons (24x24), levels, quality, colors, and acquisition info (quest/vendor)
+- **Item Display**: Items with rarity colors, mod highlighting, and tooltips with full details
+- **Skill Tree Viewer**: Native SkiaSharp rendering with zoom, pan, hover tooltips, and class start node sprites
+- **Ingame Overlay**: Transparent overlay showing gems and quest tracker over the game (Windows)
+- **Quest Tracker**: Track skill point quests, ascendancy trials (with trap types), and labs with progress saving
+- **PoE Dark Theme**: Path of Exile-inspired UI with warm dark tones, gold/bronze accents, and medieval-fantasy aesthetic
 
 ## Overlay
 
-Das Overlay zeigt deine Gems während des Spielens an:
+The overlay shows your gems and quest progress while playing:
 
-- **Hotkeys** (konfigurierbar):
-  - `F11` - Overlay ein/ausblenden
-  - `Ctrl+F11` - Zwischen Click-Through und Interaktiv-Modus wechseln
-- **Click-Through**: Klicks gehen durch das Overlay zum Spiel
-- **Verschiebbar**: Im Interaktiv-Modus am Header ziehen
-- **Position wird gespeichert**: Öffnet immer an der letzten Position
+- **Hotkeys** (configurable):
+  - `F11` - Toggle overlay visibility
+  - `Ctrl+F11` - Toggle between click-through and interactive mode
+- **Click-Through**: Clicks pass through the overlay to the game
+- **Draggable**: Drag via header in interactive mode
+- **Position saved**: Always opens at the last position
+- **Tabs**: Switch between Gems and Quests view
+- **Quest categories**: Quests, Trials, Labs with progress counters
 
-> **Hinweis**: Das Overlay funktioniert nur mit "Windowed Fullscreen" in PoE (Standard für alle PoE-Overlays).
+> **Note**: The overlay only works with "Windowed Fullscreen" in PoE (standard for all PoE overlays).
 
 ## Installation
 
 ```bash
-# Repository klonen
-git clone https://github.com/your-username/PathPilot.git
+# Clone the repository
+git clone https://github.com/Maex-z9/PathPilot.git
 cd PathPilot
 
-# Projekt starten
+# Run the project
 dotnet run --project src/PathPilot.Desktop/PathPilot.Desktop.csproj
 ```
 
-## Systemanforderungen
+## System Requirements
 
 - .NET 10 SDK
-- Windows (für Overlay-Hotkeys), Linux (eingeschränkte Funktionalität)
+- Windows (for overlay hotkeys), Linux (limited functionality)
 
 ## Screenshots
 
 *Coming soon*
 
-## Geplante Features
-
-- [ ] Interaktiver Skilltree Viewer (wie pobb.in)
-- [ ] Quest Tracker (Skill Points, Trials, wichtige Items)
-
-## Lizenz
+## License
 
 MIT
