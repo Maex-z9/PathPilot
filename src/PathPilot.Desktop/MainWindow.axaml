@@ -138,10 +138,8 @@
                                                             Margin="0,0,10,0">
                                                         <TextBlock FontSize="11"
                                                                    Foreground="#8c7a4e"
-                                                                   FontWeight="SemiBold">
-                                                            <Run Text="Link Group "/>
-                                                            <Run Text="{Binding Key}"/>
-                                                        </TextBlock>
+                                                                   FontWeight="SemiBold"
+                                                                   Text="{Binding Key}"/>
                                                     </Border>
 
                                                     <TextBlock Grid.Column="2"

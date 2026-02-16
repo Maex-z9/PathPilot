@@ -156,7 +156,7 @@
                     <StackPanel Name="QuestsPanel" Spacing="6" IsVisible="False">
 
                         <!-- Quest Category Tabs -->
-                        <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,4">
+                        <Grid ColumnDefinitions="*,*" Margin="0,0,0,4">
                             <Button Name="SkillPointsTabButton"
                                     Grid.Column="0"
                                     Content="Quests"
@@ -174,19 +174,6 @@
                                     Grid.Column="1"
                                     Content="Trials"
                                     Click="TrialsTabButton_Click"
-                                    Background="#2a2520"
-                                    Foreground="#a89b8c"
-                                    BorderBrush="#5a4f3d"
-                                    FontSize="11"
-                                    HorizontalAlignment="Stretch"
-                                    HorizontalContentAlignment="Center"
-                                    Padding="4,4"
-                                    Margin="0,0,3,0"
-                                    CornerRadius="3"/>
-                            <Button Name="LabsTabButton"
-                                    Grid.Column="2"
-                                    Content="Labs"
-                                    Click="LabsTabButton_Click"
                                     Background="#2a2520"
                                     Foreground="#a89b8c"
                                     BorderBrush="#5a4f3d"

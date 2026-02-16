@@ -29,7 +29,7 @@ public partial class OverlayWindow : Window
     private QuestCategory _currentQuestCategory = QuestCategory.SkillPoints;
     private bool _hideCompleted;
 
-    private enum QuestCategory { SkillPoints, Trials, Labs }
+    private enum QuestCategory { SkillPoints, Trials }
 
     private static readonly SolidColorBrush ActiveTabBrush = new(Color.FromRgb(61, 53, 32));   // #3d3520
     private static readonly SolidColorBrush InactiveTabBrush = new(Color.FromRgb(42, 37, 32)); // #2a2520
@@ -105,7 +105,6 @@ public partial class OverlayWindow : Window
         {
             QuestCategory.SkillPoints => _allQuests.Where(q => q.Reward == QuestReward.SkillPoint),
             QuestCategory.Trials => _allQuests.Where(q => q.Reward == QuestReward.AscendancyTrial),
-            QuestCategory.Labs => _allQuests.Where(q => q.Reward == QuestReward.Labyrinth),
             _ => _allQuests.AsEnumerable()
         };
 
@@ -122,7 +121,6 @@ public partial class OverlayWindow : Window
         {
             QuestCategory.SkillPoints => _allQuests.Where(q => q.Reward == QuestReward.SkillPoint),
             QuestCategory.Trials => _allQuests.Where(q => q.Reward == QuestReward.AscendancyTrial),
-            QuestCategory.Labs => _allQuests.Where(q => q.Reward == QuestReward.Labyrinth),
             _ => _allQuests.AsEnumerable()
         };
 
@@ -141,9 +139,6 @@ public partial class OverlayWindow : Window
         TrialsTabButton.Background = category == QuestCategory.Trials ? ActiveTabBrush : InactiveTabBrush;
         TrialsTabButton.Foreground = category == QuestCategory.Trials ? ActiveTabForeground : InactiveTabForeground;
         TrialsTabButton.BorderBrush = category == QuestCategory.Trials ? ActiveTabBorder : InactiveTabBorder;
-        LabsTabButton.Background = category == QuestCategory.Labs ? ActiveTabBrush : InactiveTabBrush;
-        LabsTabButton.Foreground = category == QuestCategory.Labs ? ActiveTabForeground : InactiveTabForeground;
-        LabsTabButton.BorderBrush = category == QuestCategory.Labs ? ActiveTabBorder : InactiveTabBorder;
 
         UpdateQuestDisplay();
     }
@@ -153,9 +148,6 @@ public partial class OverlayWindow : Window
 
     private void TrialsTabButton_Click(object? sender, RoutedEventArgs e) =>
         SetQuestCategoryTab(QuestCategory.Trials);
-
-    private void LabsTabButton_Click(object? sender, RoutedEventArgs e) =>
-        SetQuestCategoryTab(QuestCategory.Labs);
 
     private void HideCompletedCheckBox_Click(object? sender, RoutedEventArgs e)
     {
