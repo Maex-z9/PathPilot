@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:models="clr-namespace:PathPilot.Core.Models;assembly=PathPilot.Core"
+        x:Class="PathPilot.Desktop.QuestNotificationWindow"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        SystemDecorations="None"
+        ShowInTaskbar="False"
+        Topmost="True"
+        SizeToContent="WidthAndHeight"
+        CanResize="False">
+
+    <Border Background="#E61a1816" CornerRadius="8" Padding="15"
+            BorderBrush="#55c8aa6e" BorderThickness="1"
+            Cursor="Hand">
+        <StackPanel Spacing="8" MaxWidth="350" MinWidth="250">
+            <!-- Zone name header -->
+            <TextBlock Name="ZoneNameText"
+                       FontSize="14"
+                       FontWeight="Bold"
+                       Foreground="#c8aa6e"/>
+
+            <!-- Quest list -->
+            <ItemsControl Name="QuestItemsControl">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="models:Quest">
+                        <Border Background="#20ffffff" CornerRadius="4" Padding="8,5" Margin="0,2">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0" Spacing="1">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontSize="12"
+                                               Foreground="#e0d6c2"/>
+                                    <TextBlock FontSize="10" Foreground="#6b6156">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="Act {0} — {1}">
+                                                <Binding Path="Act"/>
+                                                <Binding Path="Location"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
+                                </StackPanel>
+                                <Border Grid.Column="1"
+                                        Background="#30c8aa6e"
+                                        CornerRadius="3"
+                                        Padding="6,2"
+                                        VerticalAlignment="Center"
+                                        Margin="8,0,0,0">
+                                    <TextBlock Text="{Binding RewardDescription}"
+                                               FontSize="10"
+                                               Foreground="#c8aa6e"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </Border>
+</Window>

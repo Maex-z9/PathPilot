@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly OverlaySettings _overlaySettings;
     private readonly HotkeyService _hotkeyService;
     private readonly OverlayService _overlayService;
+    private readonly QuestNotificationService _questNotificationService;
 
     public MainWindow()
     {
@@ -39,6 +40,8 @@ public partial class MainWindow : Window
         _overlaySettings = OverlaySettings.Load();
         _hotkeyService = new HotkeyService(_overlaySettings);
         _overlayService = new OverlayService(_overlaySettings, _hotkeyService);
+        _questNotificationService = new QuestNotificationService(
+            _overlaySettings, new QuestDataService(), new QuestProgressService());
 
         // Register hotkeys when window opens
         Opened += OnMainWindowOpened;
@@ -68,6 +71,9 @@ public partial class MainWindow : Window
     {
         // Start global hotkey listener
         _hotkeyService.Start();
+
+        // Start quest notification service (watches PoE log for zone changes)
+        _questNotificationService.Start();
 
         // Update overlay button tooltip with configured hotkey
         OverlayButton.SetValue(ToolTip.TipProperty,
@@ -99,6 +105,7 @@ public partial class MainWindow : Window
 
     private void OnMainWindowClosed(object? sender, EventArgs e)
     {
+        _questNotificationService.Dispose();
         _hotkeyService.Dispose();
         _overlayService.Dispose();
         _gemIconService.Dispose();

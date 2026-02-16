@@ -21,6 +21,26 @@ public class OverlaySettings
     public double OverlayX { get; set; } = 10;
     public double OverlayY { get; set; } = 10;
 
+    // PoE log file path for zone detection
+    public string? PoeLogFilePath { get; set; }
+
+    public static string? AutoDetectLogPath()
+    {
+        string[] candidates =
+        {
+            @"C:\Program Files (x86)\Grinding Gear Games\Path of Exile\logs\Client.txt",
+            @"C:\Program Files (x86)\Steam\steamapps\common\Path of Exile\logs\Client.txt",
+        };
+
+        foreach (var path in candidates)
+        {
+            if (File.Exists(path))
+                return path;
+        }
+
+        return null;
+    }
+
     public static OverlaySettings Load()
     {
         try

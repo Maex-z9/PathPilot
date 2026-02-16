@@ -3,7 +3,7 @@
         x:Class="PathPilot.Desktop.SettingsWindow"
         Title="Settings"
         Width="450"
-        Height="450"
+        Height="570"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="#0c0b0a">
@@ -110,6 +110,42 @@
                                     Foreground="#e0d6c2"
                                     BorderBrush="#5a4f3d"
                                     Padding="10,8"
+                                    CornerRadius="4"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- PoE Log File Section -->
+                <Border Background="#15130f" CornerRadius="8" Padding="15"
+                        BorderBrush="#2a2520" BorderThickness="1">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Quest Notifications"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#c8aa6e"/>
+                        <TextBlock Text="Set the path to your PoE Client.txt log file for automatic quest notifications when entering zones."
+                                   FontSize="11"
+                                   Foreground="#6b6156"
+                                   TextWrapping="Wrap"/>
+                        <Grid ColumnDefinitions="*,Auto" Margin="0,5,0,0">
+                            <TextBox Name="LogPathTextBox"
+                                     Grid.Column="0"
+                                     Watermark="C:\...\Path of Exile\logs\Client.txt"
+                                     Background="#0c0b0a"
+                                     Foreground="#e0d6c2"
+                                     BorderBrush="#5a4f3d"
+                                     FontSize="12"
+                                     Padding="8,6"
+                                     CornerRadius="4"/>
+                            <Button Name="BrowseLogButton"
+                                    Grid.Column="1"
+                                    Content="Browse"
+                                    Click="BrowseLogButton_Click"
+                                    Margin="8,0,0,0"
+                                    Background="#2a2520"
+                                    Foreground="#e0d6c2"
+                                    BorderBrush="#5a4f3d"
+                                    Padding="10,6"
                                     CornerRadius="4"/>
                         </Grid>
                     </StackPanel>

@@ -2,11 +2,13 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using PathPilot.Core.Services;
 using PathPilot.Desktop.Settings;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -25,6 +27,7 @@ public partial class SettingsWindow : Window
     private KeyModifiers _toggleModifiers;
     private Key _interactiveKey;
     private KeyModifiers _interactiveModifiers;
+    private string? _logFilePath;
 
     public bool SettingsChanged { get; private set; }
 
@@ -39,8 +42,10 @@ public partial class SettingsWindow : Window
         _toggleModifiers = settings.ToggleModifiers;
         _interactiveKey = settings.InteractiveKey;
         _interactiveModifiers = settings.InteractiveModifiers;
+        _logFilePath = settings.PoeLogFilePath;
 
         UpdateHotkeyButtonTexts();
+        LogPathTextBox.Text = _logFilePath ?? "";
 
         // Show current version
         var version = Assembly.GetEntryAssembly()?.GetName().Version;
@@ -172,6 +177,28 @@ public partial class SettingsWindow : Window
         };
     }
 
+    private async void BrowseLogButton_Click(object? sender, RoutedEventArgs e)
+    {
+        var storageProvider = StorageProvider;
+        var files = await storageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Select PoE Client.txt",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Log files") { Patterns = new[] { "Client.txt" } },
+                new FilePickerFileType("All files") { Patterns = new[] { "*" } }
+            }
+        });
+
+        if (files.Count > 0)
+        {
+            var path = files[0].Path.LocalPath;
+            _logFilePath = path;
+            LogPathTextBox.Text = path;
+        }
+    }
+
     private void ResetPositionButton_Click(object? sender, RoutedEventArgs e)
     {
         _settings.OverlayX = 10;
@@ -285,11 +312,15 @@ public partial class SettingsWindow : Window
 
     private void SaveButton_Click(object? sender, RoutedEventArgs e)
     {
+        // Read log path from textbox (user may have typed directly)
+        var logPath = string.IsNullOrWhiteSpace(LogPathTextBox.Text) ? null : LogPathTextBox.Text.Trim();
+
         // Check if anything changed
         if (_toggleKey != _settings.ToggleKey ||
             _toggleModifiers != _settings.ToggleModifiers ||
             _interactiveKey != _settings.InteractiveKey ||
-            _interactiveModifiers != _settings.InteractiveModifiers)
+            _interactiveModifiers != _settings.InteractiveModifiers ||
+            logPath != _settings.PoeLogFilePath)
         {
             SettingsChanged = true;
         }
@@ -299,6 +330,7 @@ public partial class SettingsWindow : Window
         _settings.ToggleModifiers = _toggleModifiers;
         _settings.InteractiveKey = _interactiveKey;
         _settings.InteractiveModifiers = _interactiveModifiers;
+        _settings.PoeLogFilePath = logPath;
 
         // Save to disk
         _settings.Save();
